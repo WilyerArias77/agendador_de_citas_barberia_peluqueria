@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BookingPicker } from "../../../components/booking-picker";
+import { SocialLinks } from "../../../components/social-links";
 import { WhatsappButton } from "../../../components/whatsapp-button";
 import { getPickerData } from "../../../lib/booking";
 import { hasActiveAccess } from "../../../lib/organization";
@@ -54,7 +55,7 @@ export default async function PublicBookingPage({ params }: { params: { slug: st
       </aside>
     </div>
 
-    <footer className="pb-24 pt-4 text-center text-[12px] text-[var(--ink-muted)]">Reservas con <Link href="/" className="font-semibold text-[var(--accent)]">nítida.</Link></footer>
+    <footer className="pb-28 pt-4 text-center text-[12px] text-[var(--ink-muted)]"><p>Reservas con <Link href="/" className="font-semibold text-[var(--accent)]">Growing Solutions</Link></p><SocialLinks className="mt-3" /></footer>
     {organization.phone && <WhatsappButton phone={organization.phone} message={whatsappMessage} />}
   </main>;
 }

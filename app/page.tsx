@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { MarketingNav } from "../components/marketing-nav";
+import { SocialLinks } from "../components/social-links";
+import { WhatsappButton } from "../components/whatsapp-button";
 
 const benefits = [
   ["01", "Llena tu agenda", "Confirma, organiza y recuerda cada cita desde un solo lugar."],
@@ -8,6 +10,7 @@ const benefits = [
 ];
 
 export default function HomePage() {
+  const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP ?? "";
   return <main className="min-h-screen bg-[var(--surface)]">
     <MarketingNav />
     <section className="soft-grid mx-3 overflow-hidden rounded-[10px] bg-[var(--hero)] text-[var(--ink)] sm:mx-6 lg:mx-10">
@@ -19,6 +22,6 @@ export default function HomePage() {
     <section id="beneficios" className="mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-20"><div className="grid gap-10 md:grid-cols-[.72fr_1.28fr]"><div><p className="eyebrow">Diseñado para tu oficio</p><h2 className="display mt-4 max-w-sm text-[40px] leading-[1.1]">Más orden. Más tiempo. Mejor servicio.</h2></div><div className="grid gap-4 sm:grid-cols-3">{benefits.map(([number, title, text]) => <article key={number} className="rounded-[10px] border border-[var(--line)] bg-[var(--surface-raised)] p-5"><span className="text-xs font-semibold text-[var(--accent)]">{number}</span><h3 className="mt-10 text-lg font-semibold">{title}</h3><p className="mt-3 text-[13px] leading-5 text-[var(--ink-muted)]">{text}</p></article>)}</div></div></section>
     <section id="experiencia" className="bg-[var(--surface-sunken)]"><div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 lg:grid-cols-2 lg:px-10 lg:py-20"><div><p className="eyebrow">Una identidad para cada negocio</p><h2 className="display mt-4 text-[40px] leading-[1.1]">Tu espacio también habla de ti.</h2><p className="mt-6 max-w-lg leading-7 text-[var(--ink-muted)]">Previsualiza una experiencia de barbería o de salón sin perder el orden ni la claridad de tu operación.</p></div><div className="rounded-[10px] border border-[var(--line)] bg-[var(--surface-raised)] p-6 sm:p-8"><div className="flex items-center justify-between"><p className="text-lg font-semibold">Elige tu atmósfera</p><span className="text-xl text-[var(--accent)]" aria-hidden>✦</span></div><div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4"><div className="rounded-[10px] border border-[var(--accent)] bg-[var(--surface)] p-4 sm:p-5"><div className="mb-8 h-8 w-8 rounded-full border border-[var(--accent)]"/><p className="font-semibold">Barbería</p><p className="mt-1 text-xs text-[var(--ink-muted)]">Carácter y precisión</p></div><div className="rounded-[10px] border border-[var(--line)] bg-[var(--surface-sunken)] p-4 sm:p-5"><div className="mb-8 h-8 w-8 rounded-full border border-[var(--accent)]"/><p className="font-semibold">Salón</p><p className="mt-1 text-xs text-[var(--ink-muted)]">Calma y cuidado</p></div></div></div></div></section>
     <section id="precios" className="mx-auto max-w-7xl px-6 py-16 text-center lg:px-10 lg:py-20"><p className="eyebrow">Empieza sencillo</p><h2 className="display mt-4 text-[40px]">Tu próximo cliente está a una reserva.</h2><p className="mx-auto mt-5 max-w-xl text-[var(--ink-muted)]">Finanzas que evolucionan, tecnología que impulsa.</p><Link href="/registro" className="mt-8 inline-block rounded-[10px] bg-[var(--accent)] px-6 py-3.5 text-sm font-semibold text-[var(--on-accent)]">Crear mi espacio</Link></section>
-    <footer className="border-t border-[var(--line)] px-6 py-7 text-center text-xs text-[var(--ink-muted)]">Growing Solutions · Agenda clara para crecer con intención</footer>
+    <footer className="border-t border-[var(--line)] px-6 py-7 text-center text-xs text-[var(--ink-muted)]"><SocialLinks className="mb-4" /><p>Growing Solutions · Agenda clara para crecer con intención</p></footer>{supportPhone && <WhatsappButton phone={supportPhone} message="Hola Growing Solutions, quiero información sobre la agenda para mi barbería." />}
   </main>;
 }
