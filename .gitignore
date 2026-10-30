@@ -1,0 +1,16 @@
+node_modules/
+.next/
+.next-build/
+dist/
+build/
+coverage/
+.env
+.env.local
+.env.*.local
+!.env.example
+*.log
+*.tsbuildinfo
+
+# Local scratch and generated exports
+work/
+outputs/

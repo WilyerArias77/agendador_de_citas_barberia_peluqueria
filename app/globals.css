@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root,
+:root[data-theme="barberia"] { --font-body: var(--font-inter), Arial, sans-serif; --font-display: var(--font-dm-serif), Georgia, serif; --surface:#121110; --surface-raised:#1c1a18; --surface-sunken:#0c0b0a; --line:#2e2a26; --ink:#f2ece1; --ink-muted:#a89f92; --accent:#c9a45c; --accent-soft:#2d271e; --on-accent:#121110; --success:#7fa877; --danger:#a63a33; --on-danger:#f6f1e8; --hero:var(--surface-sunken); --surface-strong:var(--surface-sunken); --muted:var(--ink-muted); }
+:root[data-theme="salon"] { --surface:#faf6f3; --surface-raised:#ffffff; --surface-sunken:#f3ece7; --line:#eaded6; --ink:#2a1f22; --ink-muted:#6e5f63; --accent:#9c4f5e; --accent-soft:#f0e1e4; --on-accent:#ffffff; --success:#3f6b45; --danger:#a3332e; --on-danger:#ffffff; --hero:var(--surface-sunken); --surface-strong:var(--surface-sunken); --muted:var(--ink-muted); }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin:0; min-width:320px; overflow-x:hidden; background:var(--surface); color:var(--ink); font-family:var(--font-body); font-size:15px; line-height:1.47; }
+a { color:inherit; text-decoration:none; }
+button, input { font:inherit; }
+button { cursor:pointer; }
+button:disabled { cursor:not-allowed; opacity:.56; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.display { font-family:var(--font-display); }
+.eyebrow { color:var(--accent); font-size:12px; font-weight:600; letter-spacing:.08em; line-height:18px; text-transform:uppercase; }
+.soft-grid { background-image:linear-gradient(135deg, transparent 0 46%, rgba(201,164,92,.10) 46% 48%, transparent 48% 100%); background-size:44px 44px; }
+.fade-up { animation:fade-up .7s ease-out both; }
+.panel-sidebar { background:var(--surface-raised); color:var(--ink); }
+.panel-sidebar a { color:var(--ink-muted); }
+.panel-sidebar a:hover, .panel-sidebar a[data-active="true"] { color:var(--accent); background:var(--surface-sunken); }
+.stripe-mark { background:repeating-linear-gradient(135deg, var(--accent) 0 10px, var(--on-accent) 10px 20px); }
+.tabular { font-variant-numeric:tabular-nums; }
+.theme-choice[aria-pressed="true"] { background:var(--accent); color:var(--on-accent); }
+input::placeholder { color:var(--ink-muted); opacity:.82; }
+@keyframes fade-up { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
