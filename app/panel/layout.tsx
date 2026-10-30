@@ -1,10 +1,11 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "../../lib/auth";
 import { AppShell } from "../../components/app-shell";
+import { hasActiveAccess, publicBookingUrl, requireOrganization, trialDaysLeft } from "../../lib/organization";
+
+export const dynamic = "force-dynamic";
 
 export default async function PanelLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const session = await auth.api.getSession({ headers: headers() });
-  if (!session) redirect("/acceso?redirectedFrom=/panel");
-  return <AppShell>{children}</AppShell>;
+  const { session, organization } = await requireOrganization();
+  if (!hasActiveAccess(organization)) redirect("/suscripcion");
+  return <AppShell organizationName={organization.name} userName={session.user.name} publicUrl={publicBookingUrl(organization.slug)} trialDaysLeft={trialDaysLeft(organization)}>{children}</AppShell>;
 }

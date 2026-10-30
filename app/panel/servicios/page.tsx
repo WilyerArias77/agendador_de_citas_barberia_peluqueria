@@ -1,7 +1,53 @@
-import Link from "next/link";
+import { ActionForm, InlineAction } from "../../../components/action-form";
+import { PageHeader, cardClass, fieldClass } from "../../../components/panel-ui";
+import { requireOrganization } from "../../../lib/organization";
+import { prisma } from "../../../lib/prisma";
+import { formatMoney } from "../../../lib/time";
+import { createService, deleteService, toggleService, updateService } from "../actions";
 
-const services = [["Corte clásico", "45 min", "$35.000", "Activo"], ["Barba + diseño", "30 min", "$25.000", "Activo"], ["Color y brillo", "90 min", "$120.000", "Activo"]];
+export const metadata = { title: "Servicios y tarifas" };
 
-export default function ServicesPage() {
-  return <main className="min-h-screen bg-[var(--surface-sunken)]"><header className="border-b border-[var(--line)] bg-[var(--surface-raised)]"><div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-5 lg:px-8"><div><p className="eyebrow">Catálogo</p><h1 className="mt-1 text-[24px] font-semibold leading-7">Servicios y tarifas</h1></div><button disabled className="h-10 rounded-[10px] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)]">+ Agregar servicio</button></div></header><div className="mx-auto max-w-[1440px] p-6 lg:p-8"><div className="overflow-hidden rounded-[10px] border border-[var(--line)] bg-[var(--surface-raised)]"><div className="hidden grid-cols-[1fr_140px_160px_120px] gap-4 bg-[var(--surface-sunken)] px-5 py-3 text-[12px] font-semibold uppercase tracking-[.08em] text-[var(--ink-muted)] md:grid"><span>Servicio</span><span>Duración</span><span className="text-right">Precio</span><span className="text-right">Estado</span></div>{services.map(([name, duration, price, status]) => <div className="grid grid-cols-1 items-center gap-3 border-t border-[var(--line)] px-5 py-5 md:grid-cols-[1fr_140px_160px_120px] md:gap-4" key={name}><div><p className="font-semibold">{name}</p><p className="mt-1 text-[13px] text-[var(--ink-muted)]">Disponible para reserva online</p></div><span className="text-[13px] text-[var(--ink-muted)]">Duración: {duration}</span><span className="tabular font-semibold text-[var(--accent)] md:text-right">{price} <small className="font-normal text-[var(--ink-muted)]">COP</small></span><span className="text-[12px] font-semibold text-[var(--success)] md:text-right">{status}</span></div>)}</div><div className="mt-6 flex items-center justify-between"><p className="text-[13px] text-[var(--ink-muted)]">3 servicios activos</p><Link href="/panel" className="text-sm font-semibold text-[var(--accent)]">← Volver al dashboard</Link></div></div></main>;
+function ServiceFields({ defaults }: { defaults?: { name: string; description: string; durationMinutes: number; price: number } }) {
+  return <div className="grid gap-4 sm:grid-cols-[1fr_130px_160px]">
+    <label className="block text-sm font-medium">Nombre<input name="name" required minLength={2} maxLength={80} defaultValue={defaults?.name} placeholder="Corte clásico" className={fieldClass} /></label>
+    <label className="block text-sm font-medium">Duración (min)<input name="durationMinutes" type="number" required min={5} max={480} step={5} defaultValue={defaults?.durationMinutes ?? 30} className={fieldClass} /></label>
+    <label className="block text-sm font-medium">Precio (COP)<input name="price" type="number" required min={0} step={500} defaultValue={defaults?.price} placeholder="30000" className={fieldClass} /></label>
+    <label className="block text-sm font-medium sm:col-span-3">Descripción (opcional)<input name="description" maxLength={200} defaultValue={defaults?.description} placeholder="Lo que incluye el servicio" className={fieldClass} /></label>
+  </div>;
+}
+
+export default async function ServicesPage() {
+  const { organization } = await requireOrganization();
+  const services = await prisma.service.findMany({ where: { organizationId: organization.id }, orderBy: [{ active: "desc" }, { createdAt: "asc" }], include: { _count: { select: { bookings: true } } } });
+  const activeCount = services.filter((service) => service.active).length;
+
+  return <main className="min-h-screen bg-[var(--surface-sunken)]">
+    <PageHeader eyebrow="Catálogo" title="Servicios y tarifas" />
+    <div className="mx-auto max-w-[1100px] space-y-6 p-6 lg:p-8">
+      <section className={`${cardClass} p-5`}>
+        <h2 className="text-[18px] font-semibold">Agregar servicio</h2>
+        <ActionForm action={createService} submitLabel="+ Agregar servicio" pendingLabel="Agregando…" resetOnSuccess className="mt-4"><ServiceFields /></ActionForm>
+      </section>
+
+      <section className={`${cardClass} overflow-hidden`}>
+        <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-3"><h2 className="font-semibold">Tus servicios</h2><span className="text-[13px] text-[var(--ink-muted)]">{activeCount} activos</span></div>
+        {services.length === 0 && <p className="p-5 text-[13px] text-[var(--ink-muted)]">Aún no tienes servicios. Agrega el primero arriba.</p>}
+        <div className="divide-y divide-[var(--line)]">{services.map((service) => <details key={service.id} className="group">
+          <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4">
+            <div className="min-w-0 flex-1"><p className={`font-semibold ${service.active ? "" : "text-[var(--ink-muted)] line-through"}`}>{service.name}</p><p className="mt-1 text-[13px] text-[var(--ink-muted)]">{service.durationMinutes} min{service.description ? ` · ${service.description}` : ""}</p></div>
+            <span className="tabular font-semibold text-[var(--accent)]">{formatMoney(service.priceInCents, service.currency)}</span>
+            <span className={`text-[12px] font-semibold ${service.active ? "text-[var(--success)]" : "text-[var(--ink-muted)]"}`}>{service.active ? "Activo" : "Inactivo"}</span>
+            <span className="text-[13px] font-semibold text-[var(--accent)] group-open:hidden">Editar</span>
+          </summary>
+          <div className="border-t border-[var(--line)] bg-[var(--surface)] px-5 py-5">
+            <ActionForm action={updateService.bind(null, service.id)} submitLabel="Guardar cambios"><ServiceFields defaults={{ name: service.name, description: service.description, durationMinutes: service.durationMinutes, price: service.priceInCents / 100 }} /></ActionForm>
+            <div className="mt-4 flex flex-wrap gap-5 border-t border-[var(--line)] pt-4">
+              <InlineAction action={toggleService.bind(null, service.id)} label={service.active ? "Desactivar (ocultar de reservas)" : "Activar"} className="text-[13px] font-semibold text-[var(--ink-muted)]" />
+              <InlineAction action={deleteService.bind(null, service.id)} label={service._count.bookings > 0 ? "Eliminar (se desactivará: tiene citas)" : "Eliminar"} confirm={`¿Eliminar "${service.name}"?`} className="text-[13px] font-semibold text-[var(--danger)]" />
+            </div>
+          </div>
+        </details>)}</div>
+      </section>
+    </div>
+  </main>;
 }

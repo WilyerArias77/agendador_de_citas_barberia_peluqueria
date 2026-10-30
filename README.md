@@ -1,6 +1,6 @@
-# Nítida
+# barberia.growingsolutions
 
-Base inicial de una plataforma SaaS de reservas para barberías y salones de belleza, con Neon PostgreSQL, Prisma y Better Auth.
+Plataforma SaaS de Growing Solutions de reservas para barberías y salones de belleza, con Neon PostgreSQL, Prisma y Better Auth.
 
 ## Fase 1 incluida
 
@@ -13,6 +13,17 @@ Base inicial de una plataforma SaaS de reservas para barberías y salones de bel
 - Esquema Prisma para usuarios, sesiones, organizaciones, perfiles, servicios y disponibilidad.
 - Modelo inicial para organizaciones, miembros, servicios, horarios y excepciones de disponibilidad.
 - Vistas de catálogo de servicios y disponibilidad del negocio.
+
+## Cómo funciona
+
+- **Dueños de negocio** se registran (`/registro`), configuran su negocio (`/bienvenida`) y reciben 14 días de prueba. El panel (`/panel`) exige plan vigente (`Organization.subscriptionStatus`, `trialEndsAt`, `currentPeriodEnd`); si vence, redirige a `/suscripcion`.
+- **Clientes finales** reservan sin cuenta en la página pública `/b/<slug>`, que también tiene botón de WhatsApp con el número del negocio.
+- **API para agentes** (`/api/agent/*`, n8n / WhatsApp): autenticada con `Authorization: Bearer <llave>`; cada negocio genera su llave en *Mi negocio*. Endpoints: `GET business`, `GET slots?serviceId&date[&days]`, `GET|POST bookings`, `PATCH|DELETE bookings/:id` (el teléfono del cliente debe coincidir).
+- Horarios disponibles: `lib/booking.ts` (horario semanal, descansos, bloqueos y citas existentes; zona horaria del negocio).
+
+## Base de datos
+
+Las migraciones están en `prisma/migrations`. Para aplicarlas en producción: `npx prisma migrate deploy` con `DATABASE_URL` apuntando a la conexión directa de Neon.
 
 ## Ejecutar localmente
 

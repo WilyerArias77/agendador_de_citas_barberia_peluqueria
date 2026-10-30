@@ -2,10 +2,37 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { AuthLayout, authInputClass } from "../../components/auth-layout";
 import { authClient } from "../../lib/auth-client";
+import { authErrorMessage } from "../../lib/auth-errors";
 
 export default function RegisterPage() {
-  const [error, setError] = useState<string | null>(null); const [loading, setLoading] = useState(false);
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); setError(null); setLoading(true); try { const form = new FormData(event.currentTarget); const result = await authClient.signUp.email({ name: String(form.get("name")), email: String(form.get("email")), password: String(form.get("password")), callbackURL: "/panel" }); if (result.error) throw new Error(result.error.message); window.location.assign("/panel"); } catch (caught) { setError(caught instanceof Error ? caught.message : "No pudimos crear la cuenta."); } finally { setLoading(false); } }
-  return <main className="grid min-h-screen lg:grid-cols-[.72fr_1fr]"><section className="relative hidden overflow-hidden bg-[var(--surface-sunken)] p-12 lg:flex lg:flex-col lg:justify-between"><div className="stripe-mark absolute right-0 top-0 h-full w-20 opacity-80"/><Link href="/" className="relative text-sm font-semibold tracking-[.08em] text-[var(--accent)]">NÍTIDA</Link><div className="relative max-w-md"><p className="eyebrow">Empieza sencillo</p><h1 className="display mt-4 text-[40px] leading-[1.1]">Tu espacio para hacer crecer el negocio.</h1><p className="mt-5 max-w-sm text-[var(--ink-muted)]">Finanzas que evolucionan, tecnología que impulsa.</p></div><p className="relative text-xs text-[var(--ink-muted)]">Reservas para trabajar mejor.</p></section><section className="flex items-center justify-center bg-[var(--surface)] px-6 py-12"><div className="w-full max-w-md rounded-[10px] border border-[var(--line)] bg-[var(--surface-raised)] p-8 sm:p-10"><Link href="/" className="display text-[28px]">nítida<span className="text-[var(--accent)]">.</span></Link><p className="eyebrow mt-12">Crea tu espacio</p><h2 className="display mt-3 text-[40px] leading-[1.1]">Abre las puertas.</h2><p className="mt-4 text-[var(--ink-muted)]">Organiza tus citas con una experiencia propia.</p><form className="mt-8 space-y-4" onSubmit={handleSubmit}><label className="block text-sm font-medium">Tu nombre<input name="name" type="text" placeholder="Camila Torres" className="mt-2 w-full rounded border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)] outline-none focus:border-[var(--accent)]" required /></label><label className="block text-sm font-medium">Correo electrónico<input name="email" type="email" placeholder="hola@tusalon.com" className="mt-2 w-full rounded border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)] outline-none focus:border-[var(--accent)]" required /></label><label className="block text-sm font-medium">Contraseña<input name="password" type="password" minLength={8} placeholder="Mínimo 8 caracteres" className="mt-2 w-full rounded border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)] outline-none focus:border-[var(--accent)]" required /></label>{error && <p className="rounded border border-[var(--danger)]/40 bg-[var(--danger)]/10 p-3 text-sm text-[var(--danger)]">{error}</p>}<button className="h-10 w-full rounded-[10px] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)]" disabled={loading} type="submit">{loading ? "Creando…" : "Crear mi espacio"}</button></form><p className="mt-8 text-center text-sm text-[var(--ink-muted)]">¿Ya tienes una cuenta? <Link href="/acceso" className="font-semibold text-[var(--accent)]">Entrar</Link></p></div></section></main>;
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setError(null); setLoading(true);
+    const form = new FormData(event.currentTarget);
+    try {
+      const result = await authClient.signUp.email({ name: String(form.get("name")).trim(), email: String(form.get("email")).trim(), password: String(form.get("password")) });
+      if (result.error) { setError(authErrorMessage(result.error, "No pudimos crear la cuenta. Inténtalo de nuevo.")); return; }
+      window.location.assign("/bienvenida");
+    } catch {
+      setError("No pudimos conectar con el servidor. Revisa tu conexión.");
+    } finally { setLoading(false); }
+  }
+
+  return <AuthLayout eyebrow="Empieza sencillo" heroTitle="Tu espacio para hacer crecer el negocio.">
+    <p className="eyebrow mt-10 lg:mt-0">14 días gratis · sin tarjeta</p>
+    <h2 className="display mt-3 text-[40px] leading-[1.1]">Abre las puertas.</h2>
+    <p className="mt-4 text-[var(--ink-muted)]">Crea tu cuenta y en dos minutos tendrás tu página de reservas.</p>
+    <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
+      <label className="block text-sm font-medium">Tu nombre<input name="name" type="text" autoComplete="name" minLength={2} maxLength={80} placeholder="Camilo Torres" className={authInputClass} required /></label>
+      <label className="block text-sm font-medium">Correo electrónico<input name="email" type="email" autoComplete="email" placeholder="hola@tubarberia.com" className={authInputClass} required /></label>
+      <label className="block text-sm font-medium">Contraseña<input name="password" type="password" autoComplete="new-password" minLength={8} placeholder="Mínimo 8 caracteres" className={authInputClass} required /></label>
+      {error && <p role="alert" className="rounded border border-[var(--danger)]/40 bg-[var(--danger)]/10 p-3 text-sm text-[var(--danger)]">{error}</p>}
+      <button className="h-11 w-full rounded-[10px] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)]" disabled={loading} type="submit">{loading ? "Creando…" : "Crear mi cuenta"}</button>
+    </form>
+    <p className="mt-8 text-center text-sm text-[var(--ink-muted)]">¿Ya tienes una cuenta? <Link href="/acceso" className="font-semibold text-[var(--accent)]">Entrar</Link></p>
+  </AuthLayout>;
 }
