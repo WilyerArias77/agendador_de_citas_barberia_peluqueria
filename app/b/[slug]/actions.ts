@@ -5,10 +5,12 @@ import type { BookingFormState } from "../../../components/booking-picker";
 import { createBooking } from "../../../lib/booking";
 import { hasActiveAccess } from "../../../lib/organization";
 import { prisma } from "../../../lib/prisma";
+import { clientIp, isRateLimited } from "../../../lib/rate-limit";
 
 export async function createPublicBooking(slug: string, _state: BookingFormState, formData: FormData): Promise<BookingFormState> {
   const organization = await prisma.organization.findUnique({ where: { slug } });
   if (!organization || !hasActiveAccess(organization)) return { error: "Este negocio no está recibiendo reservas en línea por ahora." };
+  if (await isRateLimited(`booking:${clientIp()}`, 5, 600)) return { error: "Hiciste demasiadas reservas seguidas. Espera unos minutos o escríbele al negocio por WhatsApp." };
   const result = await createBooking({
     organizationId: organization.id,
     timezone: organization.timezone,

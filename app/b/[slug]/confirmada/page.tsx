@@ -7,7 +7,7 @@ import { formatLongDate, formatMoney, formatTime } from "../../../../lib/time";
 export const dynamic = "force-dynamic";
 
 export default async function BookingConfirmedPage({ params, searchParams }: { params: { slug: string }; searchParams: { cita?: string } }) {
-  const booking = searchParams.cita ? await prisma.booking.findFirst({ where: { id: searchParams.cita, organization: { slug: params.slug } }, include: { service: true, organization: true } }) : null;
+  const booking = searchParams.cita ? await prisma.booking.findFirst({ where: { id: searchParams.cita, organization: { slug: params.slug }, createdAt: { gte: new Date(Date.now() - 86_400_000) } }, include: { service: true, organization: true } }) : null;
   if (!booking) notFound();
   const { organization } = booking;
   const when = `${formatLongDate(booking.startsAt, organization.timezone)} a las ${formatTime(booking.startsAt, organization.timezone)}`;

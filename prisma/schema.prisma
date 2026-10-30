@@ -170,3 +170,10 @@ model Booking {
   @@index([organizationId, startsAt])
   @@index([serviceId])
 }
+
+model RateLimit {
+  id          String @id @default(cuid())
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+}

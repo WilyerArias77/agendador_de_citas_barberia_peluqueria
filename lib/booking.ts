@@ -5,6 +5,7 @@ import { addDays, dateInZone, formatMoney, formatTime, fromMinutes, isValidDate,
 const SLOT_STEP_MINUTES = 15;
 const MIN_LEAD_MINUTES = 30;
 export const BOOKING_WINDOW_DAYS = 30;
+const MAX_UPCOMING_PER_PHONE = 2;
 
 export type Slot = { time: string; startsAt: string };
 
@@ -72,6 +73,10 @@ export async function createBooking(input: BookingInput): Promise<BookingResult>
   const customerPhone = normalizePhone(input.customerPhone);
   if (customerName.length < 2) return { ok: false, error: "Escribe el nombre del cliente.", status: 400 };
   if (customerPhone.replace(/\D/g, "").length < 7) return { ok: false, error: "Escribe un teléfono válido.", status: 400 };
+  if (!input.fromPanel) {
+    const upcoming = await prisma.booking.findMany({ where: { organizationId: input.organizationId, status: "confirmed", startsAt: { gte: new Date() } }, select: { customerPhone: true }, take: 2000 });
+    if (upcoming.filter((booking) => phonesMatch(booking.customerPhone, customerPhone)).length >= MAX_UPCOMING_PER_PHONE) return { ok: false, error: `Ya tienes ${MAX_UPCOMING_PER_PHONE} citas próximas en este negocio. Para agendar otra, escríbele directamente.`, status: 429 };
+  }
   const slot = await checkSlot(input);
   if (!slot.ok) return slot;
   const { startsAt } = slot;
