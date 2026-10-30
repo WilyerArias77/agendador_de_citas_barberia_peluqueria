@@ -32,6 +32,6 @@ export default function AccessPage() {
       {error && <p role="alert" className="rounded border border-[var(--danger)]/40 bg-[var(--danger)]/10 p-3 text-sm text-[var(--danger)]">{error}</p>}
       <button className="h-11 w-full rounded-[10px] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)]" type="submit" disabled={loading}>{loading ? "Entrando…" : "Entrar a mi agenda"}</button>
     </form>
-    <p className="mt-8 text-center text-sm text-[var(--ink-muted)]">¿Aún no tienes cuenta? <Link href="/registro" className="font-semibold text-[var(--accent)]">Prueba gratis 14 días</Link></p>
+    <p className="mt-8 text-center text-sm text-[var(--ink-muted)]">¿Aún no tienes cuenta? <Link href="/registro" className="font-semibold text-[var(--accent)]">Prueba gratis 7 días</Link></p>
   </AuthLayout>;
 }

@@ -16,7 +16,7 @@ Plataforma SaaS de Growing Solutions de reservas para barberías y salones de be
 
 ## Cómo funciona
 
-- **Dueños de negocio** se registran (`/registro`), configuran su negocio (`/bienvenida`) y reciben 14 días de prueba. El panel (`/panel`) exige plan vigente (`Organization.subscriptionStatus`, `trialEndsAt`, `currentPeriodEnd`); si vence, redirige a `/suscripcion`.
+- **Dueños de negocio** se registran (`/registro`), configuran su negocio (`/bienvenida`) y reciben 7 días de prueba. El panel (`/panel`) exige plan vigente (`Organization.subscriptionStatus`, `trialEndsAt`, `currentPeriodEnd`); si vence, redirige a `/suscripcion`.
 - **Clientes finales** reservan sin cuenta en la página pública `/b/<slug>`, que también tiene botón de WhatsApp con el número del negocio.
 - **API para agentes** (`/api/agent/*`, n8n / WhatsApp): autenticada con `Authorization: Bearer <llave>`; cada negocio genera su llave en *Mi negocio*. Endpoints: `GET business`, `GET slots?serviceId&date[&days]`, `GET|POST bookings`, `PATCH|DELETE bookings/:id` (el teléfono del cliente debe coincidir).
 - Horarios disponibles: `lib/booking.ts` (horario semanal, descansos, bloqueos y citas existentes; zona horaria del negocio).

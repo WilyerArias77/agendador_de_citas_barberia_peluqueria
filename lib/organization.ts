@@ -4,7 +4,7 @@ import type { Organization } from "@prisma/client";
 import { auth } from "./auth";
 import { prisma } from "./prisma";
 
-export const TRIAL_DAYS = 14;
+export const TRIAL_DAYS = 7;
 
 export async function getSession() {
   return auth.api.getSession({ headers: headers() });

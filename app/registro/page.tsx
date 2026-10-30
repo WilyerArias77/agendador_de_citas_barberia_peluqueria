@@ -23,7 +23,7 @@ export default function RegisterPage() {
   }
 
   return <AuthLayout eyebrow="Empieza sencillo" heroTitle="Tu espacio para hacer crecer el negocio.">
-    <p className="eyebrow mt-10 lg:mt-0">14 días gratis · sin tarjeta</p>
+    <p className="eyebrow mt-10 lg:mt-0">7 días gratis · sin tarjeta</p>
     <h2 className="display mt-3 text-[40px] leading-[1.1]">Abre las puertas.</h2>
     <p className="mt-4 text-[var(--ink-muted)]">Crea tu cuenta y en dos minutos tendrás tu página de reservas.</p>
     <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
