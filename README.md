@@ -25,6 +25,21 @@ Plataforma SaaS de Growing Solutions de reservas para barberías y salones de be
 
 Las migraciones están en `prisma/migrations`. Para aplicarlas en producción: `npx prisma migrate deploy` con `DATABASE_URL` apuntando a la conexión directa de Neon.
 
+## Producción y dominio
+
+- URL pública: **https://www.barberia.growingsolutions.online** (proyecto Vercel `agendador-de-citas-barberia-peluqueria`). Se despliega automáticamente con cada push a `main`.
+- `barberia.growingsolutions.online` sigue asignado al proyecto y redirige al dominio con `www`, para no romper enlaces antiguos (`/b/<slug>`, API del agente).
+- DNS en Hostinger (`growingsolutions.online`):
+
+  | Tipo | Nombre | Valor |
+  |---|---|---|
+  | CNAME | `www.barberia` | el que indique Vercel (`*.vercel-dns-017.com`) |
+  | TXT | `_vercel` | `vc-domain-verify=...` de cada subdominio (no borrarlos) |
+
+  El dominio raíz está vinculado a otra cuenta de Vercel, por eso cada subdominio necesita su TXT de verificación. Esos TXT tienen TTL de 4 h: un registro nuevo puede tardar hasta 4 h en ser reconocido por Vercel.
+- Variables de producción en Vercel: `NEXT_PUBLIC_APP_URL` y `BETTER_AUTH_URL` deben ser la URL pública exacta (con `https://`, sin `/` final). Better Auth solo confía en ese origen. Tras cambiarlas hay que hacer **Redeploy sin caché**, porque `NEXT_PUBLIC_*` se fija al compilar.
+- Si cambia el dominio, actualizar también la URL base de la API en el flujo de n8n del agente de WhatsApp.
+
 ## Ejecutar localmente
 
 1. Instala Node.js LTS.
