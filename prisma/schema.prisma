@@ -103,6 +103,7 @@ model Organization {
   bookings      Booking[]
   barbers       Barber[]
   customers     Customer[]
+  payments      PaymentReport[]
   @@index([ownerId])
 }
 
@@ -164,6 +165,21 @@ model Customer {
   updatedAt       DateTime     @updatedAt
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   @@unique([organizationId, phone])
+}
+
+// Pagos de la suscripción por transferencia (Nequi): el negocio reporta y el administrador aprueba.
+model PaymentReport {
+  id             String       @id @default(cuid())
+  organizationId String
+  amountInCents  Int
+  reference      String
+  payerName      String
+  status         String       @default("pending")
+  reviewedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  @@index([status, createdAt])
+  @@index([organizationId])
 }
 
 model WeeklyAvailability {
