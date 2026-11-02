@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export const fieldClass = "mt-2 w-full rounded border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)]";
 export const cardClass = "rounded-[10px] border border-[var(--line)] bg-[var(--surface-raised)]";
 
@@ -8,6 +10,12 @@ export function PageHeader({ eyebrow, title, actions }: { eyebrow: string; title
       {actions}
     </div>
   </header>;
+}
+
+// Pestañas de Mi negocio: configuración y tablero contable.
+export function BusinessTabs({ active }: { active: "datos" | "tablero" }) {
+  const tab = (on: boolean) => `rounded-full px-4 py-1.5 text-sm font-semibold ${on ? "bg-[var(--accent)] text-[var(--on-accent)]" : "text-[var(--ink-muted)]"}`;
+  return <nav className="flex w-fit gap-1 rounded-full border border-[var(--line)] bg-[var(--surface-raised)] p-1"><Link href="/panel/negocio" className={tab(active === "datos")}>Datos y configuración</Link><Link href="/panel/negocio/tablero" className={tab(active === "tablero")}>Tablero contable</Link></nav>;
 }
 
 const STATUS_STYLES: Record<string, [string, string]> = {

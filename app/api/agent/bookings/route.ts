@@ -25,6 +25,7 @@ export async function POST(request: Request) {
     organizationId: organization.id,
     timezone: organization.timezone,
     serviceId: String(body.serviceId ?? ""),
+    barberId: body.barberId ? String(body.barberId) : undefined,
     startsAt: String(body.startsAt ?? ""),
     customerName: String(body.customerName ?? ""),
     customerPhone: String(body.customerPhone ?? ""),

@@ -1,6 +1,6 @@
 import { ActionForm, InlineAction } from "../../../components/action-form";
 import { PageHeader, cardClass, fieldClass } from "../../../components/panel-ui";
-import { requireOrganization } from "../../../lib/organization";
+import { requireOwnerOrganization } from "../../../lib/organization";
 import { prisma } from "../../../lib/prisma";
 import { WEEKDAYS, WEEK_ORDER, formatLongDate, formatTime, todayInZone } from "../../../lib/time";
 import { addException, deleteException, saveAvailability } from "../actions";
@@ -10,7 +10,7 @@ export const metadata = { title: "Disponibilidad" };
 const timeField = "w-[104px] rounded border border-[var(--line)] bg-[var(--surface)] px-2 py-2 text-[13px] tabular text-[var(--ink)] outline-none focus:border-[var(--accent)]";
 
 export default async function AvailabilityPage() {
-  const { organization } = await requireOrganization();
+  const { organization } = await requireOwnerOrganization();
   const tz = organization.timezone;
   const [availability, exceptions] = await Promise.all([
     prisma.weeklyAvailability.findMany({ where: { organizationId: organization.id } }),

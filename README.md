@@ -18,8 +18,11 @@ Plataforma SaaS de Growing Solutions de reservas para barberías y salones de be
 
 - **Dueños de negocio** se registran (`/registro`), configuran su negocio (`/bienvenida`) y reciben 7 días de prueba. El panel (`/panel`) exige plan vigente (`Organization.subscriptionStatus`, `trialEndsAt`, `currentPeriodEnd`); si vence, redirige a `/suscripcion`.
 - **Clientes finales** reservan sin cuenta en la página pública `/b/<slug>`, que también tiene botón de WhatsApp con el número del negocio.
-- **API para agentes** (`/api/agent/*`, n8n / WhatsApp): autenticada con `Authorization: Bearer <llave>`; cada negocio genera su llave en *Mi negocio*. Endpoints: `GET business`, `GET slots?serviceId&date[&days]`, `GET|POST bookings`, `PATCH|DELETE bookings/:id` (el teléfono del cliente debe coincidir).
-- Horarios disponibles: `lib/booking.ts` (horario semanal, descansos, bloqueos y citas existentes; zona horaria del negocio).
+- **API para agentes** (`/api/agent/*`, n8n / WhatsApp): autenticada con `Authorization: Bearer <llave>`; cada negocio genera su llave en *Mi negocio*. Endpoints: `GET business` (incluye `barbers`), `GET slots?serviceId&date[&days][&barberId]`, `GET|POST bookings`, `PATCH|DELETE bookings/:id` (el teléfono del cliente debe coincidir).
+- Horarios disponibles: `lib/booking.ts` (horario semanal, descansos, bloqueos y citas existentes; zona horaria del negocio). Intervalos de 30 minutos; la página pública los muestra en dos columnas (Día · AM / Tarde · Noche · PM) y el día en un calendario mensual.
+- **Barberos** (`/panel/barberos`, solo dueño): cada barbero tiene su propia agenda. Si hay barberos activos, el cliente elige primero al barbero y luego servicio, día y hora. Con correo y contraseña el barbero entra al panel con rol `barber` (`OrganizationMember.role`): ve solo sus citas, puede agendar, reprogramar (`/panel/citas/:id/reprogramar`) y cancelar, y registrar clientes. Las citas sin barbero (anteriores) bloquean a todos. El agente de WhatsApp puede enviar `barberId` (opcional); si no lo envía, se asigna el primer barbero libre.
+- **Clientes** (`/panel/clientes`, dueño y barberos) y botón opcional en la página pública: nombre, celular, correo y fecha de nacimiento, con autorización de tratamiento de datos. Requiere que el dueño configure en *Mi negocio* el enlace a su Política de Tratamiento de Datos Personales (`Organization.privacyPolicyUrl`); el texto legal lo define cada negocio. El registro nunca es requisito para reservar.
+- **Tablero contable** (*Mi negocio → Tablero contable*): servicios prestados (citas confirmadas y atendidas), ingresos y ticket promedio en un rango de fechas, comparado con otro rango, con gráfica por servicio.
 
 ## Base de datos
 

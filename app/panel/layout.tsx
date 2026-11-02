@@ -5,7 +5,7 @@ import { hasActiveAccess, publicBookingUrl, requireOrganization, trialDaysLeft }
 export const dynamic = "force-dynamic";
 
 export default async function PanelLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const { session, organization } = await requireOrganization();
+  const { session, organization, isOwner } = await requireOrganization();
   if (!hasActiveAccess(organization)) redirect("/suscripcion");
-  return <AppShell organizationName={organization.name} userName={session.user.name} publicUrl={publicBookingUrl(organization.slug)} trialDaysLeft={trialDaysLeft(organization)}>{children}</AppShell>;
+  return <AppShell organizationName={organization.name} userName={session.user.name} publicUrl={publicBookingUrl(organization.slug)} trialDaysLeft={trialDaysLeft(organization)} isOwner={isOwner}>{children}</AppShell>;
 }

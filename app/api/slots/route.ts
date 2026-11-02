@@ -10,8 +10,9 @@ export async function GET(request: Request) {
   const slug = searchParams.get("slug") ?? "";
   const serviceId = searchParams.get("service") ?? "";
   const date = searchParams.get("date") ?? "";
+  const barberId = searchParams.get("barber") || undefined;
   const organization = await prisma.organization.findUnique({ where: { slug } });
   if (!organization || !hasActiveAccess(organization)) return NextResponse.json({ slots: [] }, { status: 404 });
-  const slots = await getAvailableSlots({ organizationId: organization.id, timezone: organization.timezone, serviceId, date });
+  const slots = await getAvailableSlots({ organizationId: organization.id, timezone: organization.timezone, serviceId, date, barberId });
   return NextResponse.json({ slots }, { headers: { "Cache-Control": "no-store" } });
 }

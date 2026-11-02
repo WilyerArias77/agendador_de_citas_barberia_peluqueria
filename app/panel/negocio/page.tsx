@@ -1,14 +1,14 @@
 import { ActionForm, InlineAction } from "../../../components/action-form";
 import { CopyButton } from "../../../components/copy-button";
-import { PageHeader, cardClass, fieldClass } from "../../../components/panel-ui";
+import { BusinessTabs, PageHeader, cardClass, fieldClass } from "../../../components/panel-ui";
 import { WhatsappButton } from "../../../components/whatsapp-button";
-import { publicBookingUrl, requireOrganization, trialDaysLeft } from "../../../lib/organization";
+import { publicBookingUrl, requireOwnerOrganization, trialDaysLeft } from "../../../lib/organization";
 import { regenerateAgentKey, revokeAgentKey, updateBusiness } from "../actions";
 
 export const metadata = { title: "Mi negocio" };
 
 export default async function BusinessPage() {
-  const { organization } = await requireOrganization();
+  const { organization } = await requireOwnerOrganization();
   const publicUrl = publicBookingUrl(organization.slug);
   const daysLeft = trialDaysLeft(organization);
   const apiBase = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/agent`;
@@ -16,6 +16,7 @@ export default async function BusinessPage() {
   return <main className="min-h-screen bg-[var(--surface-sunken)]">
     <PageHeader eyebrow="Configuración" title="Mi negocio" />
     <div className="mx-auto max-w-3xl space-y-6 p-6 lg:p-8">
+      <BusinessTabs active="datos" />
       <section className={`${cardClass} p-5`}>
         <h2 className="text-[18px] font-semibold">Datos del negocio</h2>
         <p className="mt-1 text-[13px] text-[var(--ink-muted)]">Así aparece tu negocio en tu página de reservas.</p>
@@ -24,6 +25,7 @@ export default async function BusinessPage() {
             <label className="block text-sm font-medium">Nombre del negocio<input name="name" required minLength={2} maxLength={80} defaultValue={organization.name} className={fieldClass} /></label>
             <label className="block text-sm font-medium">WhatsApp del negocio<input name="phone" type="tel" inputMode="tel" maxLength={20} defaultValue={organization.phone} placeholder="300 123 4567" className={fieldClass} /><span className="mt-1 block text-[12px] font-normal text-[var(--ink-muted)]">Tus clientes verán un botón verde para escribirte. Números de Colombia: escribe los 10 dígitos; de otro país, inclúyelo con el indicativo.</span></label>
             <label className="block text-sm font-medium">Dirección<input name="address" maxLength={160} defaultValue={organization.address} placeholder="Calle 10 # 43-20, Medellín" className={fieldClass} /></label>
+            <label className="block text-sm font-medium">Enlace a tu Política de Tratamiento de Datos Personales<input name="privacyPolicyUrl" type="url" maxLength={300} defaultValue={organization.privacyPolicyUrl} placeholder="https://tunegocio.com/politica-de-datos" className={fieldClass} /><span className="mt-1 block text-[12px] font-normal text-[var(--ink-muted)]">Necesario para registrar clientes. Debe ser la política aprobada por tu negocio; tus clientes la verán en el formulario de registro.</span></label>
           </div>
         </ActionForm>
         {organization.phone && <div className="mt-5 border-t border-[var(--line)] pt-5"><p className="mb-3 text-[13px] text-[var(--ink-muted)]">Prueba tu botón:</p><WhatsappButton phone={organization.phone} variant="inline" label="Abrir mi WhatsApp" /></div>}
@@ -42,8 +44,8 @@ export default async function BusinessPage() {
       </section>
 
       <section className={`${cardClass} p-5`}>
-        <h2 className="text-[18px] font-semibold">Agente de WhatsApp (API)</h2>
-        <p className="mt-1 text-[13px] text-[var(--ink-muted)]">Conecta un asistente automático (por ejemplo en n8n) para que tus clientes reserven, reprogramen o cancelen escribiendo por WhatsApp. Necesita esta llave secreta: no la compartas.</p>
+        <h2 className="text-[18px] font-semibold">Conecta tu asistente de whatsapp</h2>
+        <p className="mt-1 text-[13px] text-[var(--ink-muted)]">Para conectar un agente a whatsapp el comercio debe tener cuenta empresarial de whatsapp y contactarse con Growing solutions. Nota: Este servicio se ofrece solo para membresías activas mensuales.</p>
         <dl className="mt-4 space-y-2 text-[13px]">
           <div className="flex flex-wrap gap-2"><dt className="text-[var(--ink-muted)]">URL de la API:</dt><dd className="break-all font-mono">{apiBase}</dd></div>
           <div className="flex flex-wrap gap-2"><dt className="text-[var(--ink-muted)]">Llave actual:</dt><dd className="font-mono">{organization.agentApiKeyHint ?? "Ninguna"}</dd></div>

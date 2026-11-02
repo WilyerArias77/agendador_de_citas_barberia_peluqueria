@@ -2,14 +2,14 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { addDays, dateInZone, formatMoney, formatTime, fromMinutes, isValidDate, toMinutes, weekdayOf, zonedToUtc } from "./time";
 
-const SLOT_STEP_MINUTES = 15;
+const SLOT_STEP_MINUTES = 30;
 const MIN_LEAD_MINUTES = 30;
 export const BOOKING_WINDOW_DAYS = 30;
 const MAX_UPCOMING_PER_PHONE = 2;
 
 export type Slot = { time: string; startsAt: string };
 
-type SlotOptions = { organizationId: string; timezone: string; serviceId: string; date: string; ignoreLeadTime?: boolean; excludeBookingId?: string };
+type SlotOptions = { organizationId: string; timezone: string; serviceId: string; date: string; barberId?: string | null; ignoreLeadTime?: boolean; excludeBookingId?: string };
 
 export function normalizePhone(phone: string) {
   return phone.replace(/[^\d+]/g, "").slice(0, 20);
@@ -21,7 +21,26 @@ export function phonesMatch(a: string, b: string) {
   return left.length >= 7 && left === b.replace(/\D/g, "").slice(-10);
 }
 
-export async function getAvailableSlots({ organizationId, timezone, serviceId, date, ignoreLeadTime, excludeBookingId }: SlotOptions): Promise<Slot[]> {
+// Cada barbero tiene su propia agenda; las citas sin barbero (anteriores a los barberos) ocupan a todos.
+function busyFor(barberId: string | null): Prisma.BookingWhereInput {
+  return barberId ? { OR: [{ barberId }, { barberId: null }] } : {};
+}
+
+export function activeBarbers(organizationId: string) {
+  return prisma.barber.findMany({ where: { organizationId, active: true }, orderBy: { createdAt: "asc" }, select: { id: true, name: true } });
+}
+
+// Sin barbero elegido (p. ej. el agente de WhatsApp): un horario sirve si al menos un barbero está libre.
+export async function getAvailableSlots(options: SlotOptions): Promise<Slot[]> {
+  if (options.barberId !== undefined) return slotsFor(options, options.barberId);
+  const barbers = await activeBarbers(options.organizationId);
+  if (barbers.length === 0) return slotsFor(options, null);
+  const merged = new Map<string, Slot>();
+  for (const barber of barbers) for (const slot of await slotsFor(options, barber.id)) merged.set(slot.startsAt, slot);
+  return Array.from(merged.values()).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+}
+
+async function slotsFor({ organizationId, timezone, serviceId, date, ignoreLeadTime, excludeBookingId }: SlotOptions, barberId: string | null): Promise<Slot[]> {
   if (!isValidDate(date)) return [];
   const [service, availability] = await Promise.all([
     prisma.service.findFirst({ where: { id: serviceId, organizationId, active: true } }),
@@ -32,7 +51,7 @@ export async function getAvailableSlots({ organizationId, timezone, serviceId, d
   const dayStart = zonedToUtc(date, "00:00", timezone);
   const dayEnd = zonedToUtc(addDays(date, 1), "00:00", timezone);
   const [bookings, exceptions] = await Promise.all([
-    prisma.booking.findMany({ where: { organizationId, status: { not: "cancelled" }, id: excludeBookingId ? { not: excludeBookingId } : undefined, startsAt: { lt: dayEnd }, endsAt: { gt: dayStart } }, select: { startsAt: true, endsAt: true } }),
+    prisma.booking.findMany({ where: { organizationId, ...busyFor(barberId), status: { not: "cancelled" }, id: excludeBookingId ? { not: excludeBookingId } : undefined, startsAt: { lt: dayEnd }, endsAt: { gt: dayStart } }, select: { startsAt: true, endsAt: true } }),
     prisma.availabilityException.findMany({ where: { organizationId, startsAt: { lt: dayEnd }, endsAt: { gt: dayStart } }, select: { startsAt: true, endsAt: true } })
   ]);
   const busy = [...bookings, ...exceptions].map((range) => [range.startsAt.getTime(), range.endsAt.getTime()]);
@@ -53,17 +72,23 @@ export async function getAvailableSlots({ organizationId, timezone, serviceId, d
   return slots;
 }
 
-export type BookingInput = { organizationId: string; timezone: string; serviceId: string; startsAt: string; customerName: string; customerPhone: string; customerEmail?: string; notes?: string; fromPanel?: boolean };
+export type BookingInput = { organizationId: string; timezone: string; serviceId: string; barberId?: string; startsAt: string; customerName: string; customerPhone: string; customerEmail?: string; notes?: string; fromPanel?: boolean };
 export type BookingResult = { ok: true; bookingId: string } | { ok: false; error: string; status?: number };
 
-async function checkSlot(input: { organizationId: string; timezone: string; serviceId: string; startsAt: string; fromPanel?: boolean; excludeBookingId?: string }): Promise<{ ok: true; startsAt: Date } | { ok: false; error: string; status: number }> {
+// Valida el horario y resuelve el barbero: el pedido, o el primero libre si no se eligió ninguno.
+async function checkSlot(input: { organizationId: string; timezone: string; serviceId: string; barberId?: string | null; startsAt: string; fromPanel?: boolean; excludeBookingId?: string }): Promise<{ ok: true; startsAt: Date; barberId: string | null } | { ok: false; error: string; status: number }> {
   const startsAt = new Date(input.startsAt);
   if (Number.isNaN(startsAt.getTime())) return { ok: false, error: "Elige un horario.", status: 400 };
   const date = dateInZone(startsAt, input.timezone);
   if (!input.fromPanel && date > addDays(dateInZone(new Date(), input.timezone), BOOKING_WINDOW_DAYS)) return { ok: false, error: `Solo se puede reservar con hasta ${BOOKING_WINDOW_DAYS} días de anticipación.`, status: 400 };
-  const slots = await getAvailableSlots({ organizationId: input.organizationId, timezone: input.timezone, serviceId: input.serviceId, date, ignoreLeadTime: input.fromPanel, excludeBookingId: input.excludeBookingId });
-  if (!slots.some((slot) => slot.startsAt === startsAt.toISOString())) return { ok: false, error: `El horario de las ${formatTime(startsAt, input.timezone)} ya no está disponible. Elige otro.`, status: 409 };
-  return { ok: true, startsAt };
+  const barbers = await activeBarbers(input.organizationId);
+  if (input.barberId && !barbers.some((barber) => barber.id === input.barberId)) return { ok: false, error: "Elige un barbero disponible.", status: 400 };
+  const candidates = barbers.length === 0 ? [null] : input.barberId ? [input.barberId] : barbers.map((barber) => barber.id);
+  for (const barberId of candidates) {
+    const slots = await getAvailableSlots({ organizationId: input.organizationId, timezone: input.timezone, serviceId: input.serviceId, date, barberId, ignoreLeadTime: input.fromPanel, excludeBookingId: input.excludeBookingId });
+    if (slots.some((slot) => slot.startsAt === startsAt.toISOString())) return { ok: true, startsAt, barberId };
+  }
+  return { ok: false, error: `El horario de las ${formatTime(startsAt, input.timezone)} ya no está disponible. Elige otro.`, status: 409 };
 }
 
 const SLOT_TAKEN: BookingResult = { ok: false, error: "Ese horario se acaba de ocupar. Elige otro.", status: 409 };
@@ -79,15 +104,15 @@ export async function createBooking(input: BookingInput): Promise<BookingResult>
   }
   const slot = await checkSlot(input);
   if (!slot.ok) return slot;
-  const { startsAt } = slot;
+  const { startsAt, barberId } = slot;
 
   try {
     const booking = await prisma.$transaction(async (tx) => {
       const service = await tx.service.findFirstOrThrow({ where: { id: input.serviceId, organizationId: input.organizationId } });
       const endsAt = new Date(startsAt.getTime() + service.durationMinutes * 60_000);
-      const overlapping = await tx.booking.count({ where: { organizationId: input.organizationId, status: { not: "cancelled" }, startsAt: { lt: endsAt }, endsAt: { gt: startsAt } } });
+      const overlapping = await tx.booking.count({ where: { organizationId: input.organizationId, ...busyFor(barberId), status: { not: "cancelled" }, startsAt: { lt: endsAt }, endsAt: { gt: startsAt } } });
       if (overlapping > 0) throw new Error("SLOT_TAKEN");
-      return tx.booking.create({ data: { organizationId: input.organizationId, serviceId: service.id, customerName, customerPhone, customerEmail: (input.customerEmail ?? "").trim().slice(0, 120), notes: (input.notes ?? "").trim().slice(0, 300), startsAt, endsAt, priceInCents: service.priceInCents } });
+      return tx.booking.create({ data: { organizationId: input.organizationId, serviceId: service.id, barberId, customerName, customerPhone, customerEmail: (input.customerEmail ?? "").trim().slice(0, 120), notes: (input.notes ?? "").trim().slice(0, 300), startsAt, endsAt, priceInCents: service.priceInCents } });
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     return { ok: true, bookingId: booking.id };
   } catch {
@@ -95,22 +120,22 @@ export async function createBooking(input: BookingInput): Promise<BookingResult>
   }
 }
 
-export async function rescheduleBooking(input: { organizationId: string; timezone: string; bookingId: string; startsAt: string; serviceId?: string; fromPanel?: boolean }): Promise<BookingResult> {
+export async function rescheduleBooking(input: { organizationId: string; timezone: string; bookingId: string; startsAt: string; serviceId?: string; barberId?: string; fromPanel?: boolean }): Promise<BookingResult> {
   const booking = await prisma.booking.findFirst({ where: { id: input.bookingId, organizationId: input.organizationId } });
   if (!booking) return { ok: false, error: "No encontramos esa cita.", status: 404 };
   if (booking.status !== "confirmed") return { ok: false, error: "Esa cita ya no se puede reprogramar.", status: 409 };
   const serviceId = input.serviceId || booking.serviceId;
-  const slot = await checkSlot({ ...input, serviceId, excludeBookingId: booking.id });
+  const slot = await checkSlot({ ...input, serviceId, barberId: input.barberId ?? booking.barberId, excludeBookingId: booking.id });
   if (!slot.ok) return slot;
-  const { startsAt } = slot;
+  const { startsAt, barberId } = slot;
 
   try {
     await prisma.$transaction(async (tx) => {
       const service = await tx.service.findFirstOrThrow({ where: { id: serviceId, organizationId: input.organizationId } });
       const endsAt = new Date(startsAt.getTime() + service.durationMinutes * 60_000);
-      const overlapping = await tx.booking.count({ where: { organizationId: input.organizationId, id: { not: booking.id }, status: { not: "cancelled" }, startsAt: { lt: endsAt }, endsAt: { gt: startsAt } } });
+      const overlapping = await tx.booking.count({ where: { organizationId: input.organizationId, ...busyFor(barberId), id: { not: booking.id }, status: { not: "cancelled" }, startsAt: { lt: endsAt }, endsAt: { gt: startsAt } } });
       if (overlapping > 0) throw new Error("SLOT_TAKEN");
-      await tx.booking.update({ where: { id: booking.id }, data: { serviceId: service.id, startsAt, endsAt, priceInCents: service.priceInCents } });
+      await tx.booking.update({ where: { id: booking.id }, data: { serviceId: service.id, barberId, startsAt, endsAt, priceInCents: service.priceInCents } });
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     return { ok: true, bookingId: booking.id };
   } catch {
@@ -129,14 +154,15 @@ export function upcomingDates(timezone: string, days = BOOKING_WINDOW_DAYS) {
 }
 
 export async function getPickerData(organization: { id: string; timezone: string; currency?: string }) {
-  const [services, availability] = await Promise.all([
+  const [services, availability, barbers] = await Promise.all([
     prisma.service.findMany({ where: { organizationId: organization.id, active: true }, orderBy: { createdAt: "asc" } }),
-    prisma.weeklyAvailability.findMany({ where: { organizationId: organization.id }, select: { weekday: true } })
+    prisma.weeklyAvailability.findMany({ where: { organizationId: organization.id }, select: { weekday: true } }),
+    activeBarbers(organization.id)
   ]);
   const openDays = new Set(availability.map((day) => day.weekday));
-  const shortFormat = (value: string, options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("es-CO", { timeZone: "UTC", ...options }).format(new Date(`${value}T12:00:00Z`)).replace(".", "");
   return {
+    barbers,
     services: services.map((service) => ({ id: service.id, name: service.name, description: service.description, duration: `${service.durationMinutes} min`, price: formatMoney(service.priceInCents, service.currency) })),
-    dates: upcomingDates(organization.timezone).map((value) => ({ value, weekday: shortFormat(value, { weekday: "short" }), day: shortFormat(value, { day: "numeric" }), month: shortFormat(value, { month: "short" }), open: openDays.has(weekdayOf(value)) }))
+    dates: upcomingDates(organization.timezone).map((value) => ({ value, open: openDays.has(weekdayOf(value)) }))
   };
 }

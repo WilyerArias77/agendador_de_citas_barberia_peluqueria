@@ -1,6 +1,6 @@
 import { ActionForm, InlineAction } from "../../../components/action-form";
 import { PageHeader, cardClass, fieldClass } from "../../../components/panel-ui";
-import { requireOrganization } from "../../../lib/organization";
+import { requireOwnerOrganization } from "../../../lib/organization";
 import { prisma } from "../../../lib/prisma";
 import { formatMoney } from "../../../lib/time";
 import { createService, deleteService, toggleService, updateService } from "../actions";
@@ -17,7 +17,7 @@ function ServiceFields({ defaults }: { defaults?: { name: string; description: s
 }
 
 export default async function ServicesPage() {
-  const { organization } = await requireOrganization();
+  const { organization } = await requireOwnerOrganization();
   const services = await prisma.service.findMany({ where: { organizationId: organization.id }, orderBy: [{ active: "desc" }, { createdAt: "asc" }], include: { _count: { select: { bookings: true } } } });
   const activeCount = services.filter((service) => service.active).length;
 

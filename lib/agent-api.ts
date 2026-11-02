@@ -39,6 +39,7 @@ export function serializeBooking(booking: Booking & { service: Service }, timezo
     id: booking.id,
     serviceId: booking.serviceId,
     serviceName: booking.service.name,
+    barberId: booking.barberId,
     startsAt: booking.startsAt.toISOString(),
     date: dateInZone(booking.startsAt, timezone),
     time: formatTime(booking.startsAt, timezone),

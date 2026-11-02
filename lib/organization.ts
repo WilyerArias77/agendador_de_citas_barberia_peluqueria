@@ -16,22 +16,42 @@ export async function requireSession() {
   return session;
 }
 
-export async function getUserOrganization(userId: string) {
-  const membership = await prisma.organizationMember.findFirst({ where: { userId }, include: { organization: true }, orderBy: { createdAt: "asc" } });
-  return membership?.organization ?? null;
+async function getMembership(userId: string) {
+  return prisma.organizationMember.findFirst({ where: { userId }, include: { organization: true }, orderBy: { createdAt: "asc" } });
 }
 
+export async function getUserOrganization(userId: string) {
+  return (await getMembership(userId))?.organization ?? null;
+}
+
+// role "barber": empleado con acceso propio; solo ve y gestiona sus citas y los clientes.
 export async function requireOrganization() {
   const session = await requireSession();
-  const organization = await getUserOrganization(session.user.id);
-  if (!organization) redirect("/bienvenida");
-  return { session, organization };
+  const membership = await getMembership(session.user.id);
+  if (!membership) redirect("/bienvenida");
+  const isBarber = membership.role === "barber";
+  const barber = isBarber ? await prisma.barber.findFirst({ where: { userId: session.user.id, organizationId: membership.organizationId, active: true } }) : null;
+  if (isBarber && !barber) redirect("/acceso?inactivo=1");
+  return { session, organization: membership.organization, isOwner: !isBarber, barberId: barber?.id ?? null };
+}
+
+// Páginas solo para el dueño: los barberos vuelven al inicio.
+export async function requireOwnerOrganization() {
+  const context = await requireOrganization();
+  if (!context.isOwner) redirect("/panel");
+  return context;
 }
 
 // Para server actions del panel: exige negocio y plan vigente.
 export async function requireActiveOrganization() {
   const context = await requireOrganization();
   if (!hasActiveAccess(context.organization)) redirect("/suscripcion");
+  return context;
+}
+
+export async function requireActiveOwner() {
+  const context = await requireActiveOrganization();
+  if (!context.isOwner) redirect("/panel");
   return context;
 }
 
