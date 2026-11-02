@@ -1,4 +1,4 @@
-import { CustomerForm } from "../../../components/customer-form";
+import { CustomerSignup } from "../../../components/customer-form";
 import { PageHeader, cardClass } from "../../../components/panel-ui";
 import { requireOrganization } from "../../../lib/organization";
 import { prisma } from "../../../lib/prisma";
@@ -18,7 +18,7 @@ export default async function CustomersPage() {
       <section className={`${cardClass} p-5`}>
         <h2 className="text-[18px] font-semibold">Crear cliente</h2>
         <p className="mt-1 text-[13px] text-[var(--ink-muted)]">Los clientes también pueden registrarse solos desde tu página de reservas. El registro es opcional y no es necesario para reservar.</p>
-        <div className="mt-4"><CustomerForm action={createCustomer} businessName={organization.name} policyUrl={organization.privacyPolicyUrl} internal /></div>
+        <div className="mt-4"><CustomerSignup label="+ Crear cliente" action={createCustomer} businessName={organization.name} policyUrl={organization.privacyPolicyUrl} internal /></div>
       </section>
 
       <section className={`${cardClass} overflow-hidden`}>

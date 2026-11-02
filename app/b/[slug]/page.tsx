@@ -8,13 +8,12 @@ import { WhatsappButton } from "../../../components/whatsapp-button";
 import { getPickerData } from "../../../lib/booking";
 import { hasActiveAccess } from "../../../lib/organization";
 import { prisma } from "../../../lib/prisma";
-import { WEEKDAYS, WEEK_ORDER } from "../../../lib/time";
 import { createPublicBooking, registerPublicCustomer } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 async function getOrganization(slug: string) {
-  return prisma.organization.findUnique({ where: { slug }, include: { availability: true } });
+  return prisma.organization.findUnique({ where: { slug } });
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -27,7 +26,6 @@ export default async function PublicBookingPage({ params }: { params: { slug: st
   if (!organization) notFound();
   const active = hasActiveAccess(organization);
   const picker = active ? await getPickerData(organization) : null;
-  const schedule = WEEK_ORDER.map((weekday) => ({ weekday, day: organization.availability.find((d) => d.weekday === weekday) }));
   const whatsappMessage = `Hola ${organization.name}, quiero información sobre una cita.`;
 
   return <main className="min-h-screen bg-[var(--surface-sunken)]">
@@ -42,20 +40,13 @@ export default async function PublicBookingPage({ params }: { params: { slug: st
     </header>
 
     <div className="mx-auto max-w-xl space-y-5 px-4 py-6 sm:py-8">
+      {active && <section className="rounded-[10px] border border-[var(--line)] bg-[var(--surface-raised)] p-5"><CustomerSignup label={<>Regístrate como cliente de la barbería &ldquo;{organization.name}&rdquo; para futuros descuentos y/o novedades</>} action={registerPublicCustomer.bind(null, organization.slug)} businessName={organization.name} policyUrl={organization.privacyPolicyUrl} /></section>}
+
       <section className="rounded-[10px] border border-[var(--line)] bg-[var(--surface-raised)] p-5 sm:p-7">
         {!active ? <div className="py-10 text-center"><p className="eyebrow">Agenda no disponible</p><h2 className="display mt-3 text-[32px]">Por ahora no recibimos reservas en línea.</h2><p className="mt-3 text-[var(--ink-muted)]">Comunícate directamente con el negocio para agendar tu cita.</p></div>
           : picker!.services.length === 0 ? <div className="py-10 text-center"><h2 className="display text-[32px]">Muy pronto podrás reservar aquí.</h2><p className="mt-3 text-[var(--ink-muted)]">Este negocio todavía está configurando sus servicios.</p></div>
           : <BookingPicker slug={organization.slug} barbers={picker!.barbers} services={picker!.services} dates={picker!.dates} action={createPublicBooking.bind(null, organization.slug)} submitLabel="Confirmar reserva" askEmail />}
       </section>
-
-      {active && <section className="rounded-[10px] border border-[var(--line)] bg-[var(--surface-raised)] p-5"><CustomerSignup action={registerPublicCustomer.bind(null, organization.slug)} businessName={organization.name} policyUrl={organization.privacyPolicyUrl} /></section>}
-
-      <aside className="h-fit rounded-[10px] border border-[var(--line)] bg-[var(--surface-raised)] p-5">
-        <p className="eyebrow">Horario</p>
-        <ul className="mt-4 space-y-2 text-sm">
-          {schedule.map(({ weekday, day }) => <li key={weekday} className="flex justify-between gap-3"><span className="text-[var(--ink-muted)]">{WEEKDAYS[weekday]}</span><span className="tabular">{day ? `${day.startsAt} – ${day.endsAt}` : "Cerrado"}</span></li>)}
-        </ul>
-      </aside>
     </div>
 
     <footer className="pb-28 pt-4 text-center text-[12px] text-[var(--ink-muted)]"><p>Reservas con <Link href="/" className="font-semibold text-[var(--accent)]">Growing Solutions</Link></p><SocialLinks className="mt-3" /></footer>

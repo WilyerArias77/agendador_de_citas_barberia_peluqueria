@@ -9,8 +9,7 @@ export type CustomerResult = { error?: string; success?: string };
 
 const field = (formData: FormData, key: string, max: number) => String(formData.get(key) ?? "").trim().slice(0, max);
 
-export async function registerCustomer(organization: { id: string; privacyPolicyUrl: string }, formData: FormData, meta: { source: "panel" | "public"; createdByUserId?: string }): Promise<CustomerResult> {
-  if (!organization.privacyPolicyUrl) return { error: "El negocio aún no ha publicado su Política de Tratamiento de Datos Personales." };
+export async function registerCustomer(organization: { id: string }, formData: FormData, meta: { source: "panel" | "public"; createdByUserId?: string }): Promise<CustomerResult> {
   const fullName = field(formData, "fullName", 80);
   const phone = normalizePhone(field(formData, "phone", 20));
   const email = field(formData, "email", 120).toLowerCase();
