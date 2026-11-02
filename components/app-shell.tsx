@@ -20,13 +20,16 @@ function Icon({ name }: { name: string }) {
   return <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" viewBox="0 0 24 24"><path d={paths[name]} /></svg>;
 }
 
-type Props = { children: React.ReactNode; organizationName: string; userName: string; publicUrl: string; trialDaysLeft: number | null; isOwner: boolean; isAdmin: boolean };
+type Props = { children: React.ReactNode; organizationName: string; userName: string; publicUrl: string; trialDaysLeft: number | null; renewalDaysLeft: number | null; isOwner: boolean; isAdmin: boolean };
+
+// Desde estos días antes del vencimiento se avisa al dueño que renueve la mensualidad.
+const RENEWAL_NOTICE_DAYS = 5;
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]?.toUpperCase()).join("") || "N";
 }
 
-export function AppShell({ children, organizationName, userName, publicUrl, trialDaysLeft, isOwner, isAdmin }: Readonly<Props>) {
+export function AppShell({ children, organizationName, userName, publicUrl, trialDaysLeft, renewalDaysLeft, isOwner, isAdmin }: Readonly<Props>) {
   const pathname = usePathname();
   const items = navigation.filter((item) => isOwner || !item.ownerOnly);
   const isActive = (href: string) => href === "/panel" ? pathname === href : pathname.startsWith(href);
@@ -50,6 +53,7 @@ export function AppShell({ children, organizationName, userName, publicUrl, tria
     </div>
 
     {isOwner && trialDaysLeft !== null && <div className="border-b border-[var(--line)] bg-[var(--accent-soft)] px-6 py-2.5 text-center text-[13px] lg:px-8">Prueba gratis: {trialDaysLeft === 0 ? "termina hoy" : trialDaysLeft === 1 ? "te queda 1 día" : `te quedan ${trialDaysLeft} días`}. <Link href="/suscripcion" className="font-semibold text-[var(--accent)]">Activa tu plan →</Link></div>}
+    {isOwner && renewalDaysLeft !== null && renewalDaysLeft <= RENEWAL_NOTICE_DAYS && <div role="status" className="border-b border-[#ff1493]/40 bg-[#ff1493]/10 px-6 py-2.5 text-center text-[13px] lg:px-8">Tu mensualidad vence {renewalDaysLeft <= 1 ? "en menos de 1 día" : `en ${renewalDaysLeft} días`}. Agrega tu nuevo pago para no dejar de recibir reservas. <Link href="/suscripcion" className="font-semibold text-[#ff1493]">Renovar ahora →</Link></div>}
     {children}
   </div>;
 }

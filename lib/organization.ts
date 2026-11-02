@@ -67,6 +67,12 @@ export function trialDaysLeft(org: Pick<Organization, "subscriptionStatus" | "tr
   return Math.max(0, Math.ceil((org.trialEndsAt.getTime() - Date.now()) / 86_400_000));
 }
 
+// Días que le quedan a la mensualidad pagada; null si no está en plan pagado.
+export function paidDaysLeft(org: Pick<Organization, "subscriptionStatus" | "currentPeriodEnd">) {
+  if (org.subscriptionStatus !== "active" || !org.currentPeriodEnd) return null;
+  return Math.max(0, Math.ceil((org.currentPeriodEnd.getTime() - Date.now()) / 86_400_000));
+}
+
 export function slugify(value: string) {
   return value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48) || "negocio";
 }

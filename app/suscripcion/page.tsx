@@ -24,9 +24,11 @@ export default async function SubscriptionPage() {
 
   const title = organization.subscriptionStatus === "active" && active ? "Tu plan está activo."
     : active && daysLeft !== null ? `Estás en tu prueba gratis: ${daysLeft === 1 ? "queda 1 día" : `quedan ${daysLeft} días`}.`
-    : organization.subscriptionStatus === "trialing" ? "Tu prueba gratis terminó." : "Tu plan está inactivo.";
+    : organization.subscriptionStatus === "trialing" ? "Tu prueba gratis terminó."
+    : organization.currentPeriodEnd ? `Tu mensualidad venció el ${formatLongDate(organization.currentPeriodEnd, tz).toLowerCase()}.` : "Tu plan está inactivo.";
   const status = organization.subscriptionStatus === "active" && active && organization.currentPeriodEnd ? `Vigente hasta el ${formatLongDate(organization.currentPeriodEnd, tz).toLowerCase()}. Puedes pagar por adelantado: el mes se suma al final de tu periodo.`
     : active ? "Si pagas ahora, el mes empieza a contar cuando termine tu prueba gratis."
+    : organization.subscriptionStatus === "active" ? "Agrega tu nuevo pago para renovarla. Tus datos, servicios y citas siguen guardados; al aprobar el pago vuelves a usar el panel y tus clientes pueden reservar de nuevo."
     : "Tus datos, servicios y citas siguen guardados. Activa tu plan para volver a usar el panel y para que tus clientes puedan reservar de nuevo en tu página.";
 
   return <AuthLayout eyebrow="Tu plan" heroTitle="Sigue llenando tu agenda sin perseguir clientes.">
