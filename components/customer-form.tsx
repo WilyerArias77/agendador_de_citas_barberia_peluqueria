@@ -24,9 +24,7 @@ export function CustomerForm({ action, businessName, policyUrl, internal }: Prop
     </div>
     <div className="mt-5 rounded border border-[var(--line)] bg-[var(--surface)] p-4 text-[13px]">
       <p className="font-semibold">Tratamiento de datos personales</p>
-      {policyUrl ? <a href={policyUrl} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block font-semibold text-[var(--accent)] underline">Ver la Política de Tratamiento de Datos Personales de {businessName}</a>
-        : internal ? <p className="mt-1 text-[var(--danger)]">Aún no has publicado el enlace a tu Política de Tratamiento de Datos Personales. Agrégalo en Mi negocio para que tus clientes puedan consultarla.</p>
-        : <p className="mt-1 text-[var(--ink-muted)]">Puedes solicitar la Política de Tratamiento de Datos Personales directamente a {businessName}.</p>}
+      <a href={policyUrl} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block font-semibold text-[var(--accent)] underline">Ver la Política de Tratamiento de Datos Personales de {businessName}</a>
       <label className="mt-3 flex items-start gap-3">
         <input name="consent" type="checkbox" required className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]" />
         <span className="text-[var(--ink-muted)]">{internal ? `El cliente autorizó a ${businessName} el tratamiento de sus datos personales conforme a su Política de Tratamiento de Datos Personales.` : `Autorizo a ${businessName} el tratamiento de mis datos personales conforme a su Política de Tratamiento de Datos Personales.`}</span>

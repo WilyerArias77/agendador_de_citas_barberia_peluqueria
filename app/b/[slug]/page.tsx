@@ -6,6 +6,7 @@ import { CustomerSignup } from "../../../components/customer-form";
 import { SocialLinks } from "../../../components/social-links";
 import { WhatsappButton } from "../../../components/whatsapp-button";
 import { getPickerData } from "../../../lib/booking";
+import { policyUrlFor } from "../../../lib/customers";
 import { hasActiveAccess } from "../../../lib/organization";
 import { prisma } from "../../../lib/prisma";
 import { createPublicBooking, registerPublicCustomer } from "./actions";
@@ -40,7 +41,7 @@ export default async function PublicBookingPage({ params }: { params: { slug: st
     </header>
 
     <div className="mx-auto max-w-xl space-y-5 px-4 py-6 sm:py-8">
-      {active && <section className="rounded-[10px] border border-[var(--line)] bg-[var(--surface-raised)] p-5"><CustomerSignup label={<>Regístrate como cliente de la barbería &ldquo;{organization.name}&rdquo; para futuros descuentos y/o novedades</>} action={registerPublicCustomer.bind(null, organization.slug)} businessName={organization.name} policyUrl={organization.privacyPolicyUrl} /></section>}
+      {active && <section className="rounded-[10px] border border-[var(--line)] bg-[var(--surface-raised)] p-5"><CustomerSignup label={<>Regístrate como cliente de la barbería &ldquo;{organization.name}&rdquo; para futuros descuentos y/o novedades</>} action={registerPublicCustomer.bind(null, organization.slug)} businessName={organization.name} policyUrl={policyUrlFor(organization)} /></section>}
 
       <section className="rounded-[10px] border border-[var(--line)] bg-[var(--surface-raised)] p-5 sm:p-7">
         {!active ? <div className="py-10 text-center"><p className="eyebrow">Agenda no disponible</p><h2 className="display mt-3 text-[32px]">Por ahora no recibimos reservas en línea.</h2><p className="mt-3 text-[var(--ink-muted)]">Comunícate directamente con el negocio para agendar tu cita.</p></div>

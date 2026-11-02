@@ -31,6 +31,11 @@ export async function registerCustomer(organization: { id: string }, formData: F
   return meta.source === "public" ? publicSuccess : { success: `Cliente "${fullName}" registrado.` };
 }
 
+// Si el negocio no publicó una política propia, se usa la política por defecto de su página.
+export function policyUrlFor(organization: { slug: string; privacyPolicyUrl: string }) {
+  return organization.privacyPolicyUrl || `/b/${organization.slug}/politica-de-datos`;
+}
+
 export function isValidPolicyUrl(value: string) {
   try {
     const url = new URL(value);
