@@ -6,7 +6,7 @@ import { prisma } from "../../../../lib/prisma";
 import { addDays, formatDateStr, formatMoney, isValidDate, todayInZone, zonedToUtc } from "../../../../lib/time";
 import { createExpense, deleteExpense } from "../../actions";
 
-export const metadata = { title: "Gastos" };
+export const metadata = { title: "Tablero de gastos" };
 
 const MAX_RANGE_DAYS = 366;
 // Los gastos se guardan en pesos; formatMoney trabaja en centavos.
@@ -71,7 +71,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: { d
   ];
 
   return <main className="min-h-screen bg-[var(--surface-sunken)]">
-    <PageHeader eyebrow="Mi negocio" title="Gastos" />
+    <PageHeader eyebrow="Mi negocio" title="Tablero de gastos" />
     <div className="mx-auto max-w-[1100px] space-y-6 p-6 lg:p-8">
       <BusinessTabs active="gastos" />
 

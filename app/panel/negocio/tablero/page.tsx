@@ -3,7 +3,7 @@ import { requireOwnerOrganization } from "../../../../lib/organization";
 import { prisma } from "../../../../lib/prisma";
 import { addDays, formatDateStr, formatMoney, isValidDate, todayInZone, zonedToUtc } from "../../../../lib/time";
 
-export const metadata = { title: "Tablero contable" };
+export const metadata = { title: "Tablero de ingresos" };
 
 // Servicios prestados = citas confirmadas o atendidas (excluye canceladas y "no asistió"), igual que en Inicio.
 const COUNTED = ["confirmed", "completed"];
@@ -41,9 +41,14 @@ export default async function AccountingPage({ searchParams }: { searchParams: {
   const { organization } = await requireOwnerOrganization();
   const tz = organization.timezone;
   const today = todayInZone(tz);
-  const current = parseRange(searchParams.desde, searchParams.hasta, { from: `${today.slice(0, 8)}01`, to: today });
+  // Por defecto: el mes completo (incluye citas futuras del mes), comparado con el mes anterior completo.
+  const monthStart = `${today.slice(0, 8)}01`;
+  const thisMonth = { from: monthStart, to: addDays(`${addDays(monthStart, 32).slice(0, 8)}01`, -1) };
+  const current = parseRange(searchParams.desde, searchParams.hasta, thisMonth);
+  const isDefaultMonth = current.from === thisMonth.from && current.to === thisMonth.to;
   const length = daysBetween(current.from, current.to);
-  const compare = parseRange(searchParams.compDesde, searchParams.compHasta, { from: addDays(current.from, -(length + 1)), to: addDays(current.from, -1) });
+  const previous = isDefaultMonth ? { from: `${addDays(monthStart, -1).slice(0, 8)}01`, to: addDays(monthStart, -1) } : { from: addDays(current.from, -(length + 1)), to: addDays(current.from, -1) };
+  const compare = parseRange(searchParams.compDesde, searchParams.compHasta, previous);
 
   const [services, currentData, compareData] = await Promise.all([
     prisma.service.findMany({ where: { organizationId: organization.id }, select: { id: true, name: true } }),
@@ -67,7 +72,7 @@ export default async function AccountingPage({ searchParams }: { searchParams: {
   ];
 
   return <main className="min-h-screen bg-[var(--surface-sunken)]">
-    <PageHeader eyebrow="Mi negocio" title="Tablero contable" />
+    <PageHeader eyebrow="Mi negocio" title="Tablero de ingresos" />
     <div className="mx-auto max-w-[1100px] space-y-6 p-6 lg:p-8">
       <BusinessTabs active="tablero" />
 
