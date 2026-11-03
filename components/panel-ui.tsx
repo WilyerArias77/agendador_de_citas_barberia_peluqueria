@@ -13,9 +13,9 @@ export function PageHeader({ eyebrow, title, actions }: { eyebrow: string; title
 }
 
 // Pestañas de Mi negocio: configuración y tablero contable.
-export function BusinessTabs({ active }: { active: "datos" | "tablero" }) {
-  const tab = (on: boolean) => `rounded-full px-4 py-1.5 text-sm font-semibold ${on ? "bg-[var(--accent)] text-[var(--on-accent)]" : "text-[var(--ink-muted)]"}`;
-  return <nav className="flex w-fit gap-1 rounded-full border border-[var(--line)] bg-[var(--surface-raised)] p-1"><Link href="/panel/negocio" className={tab(active === "datos")}>Datos y configuración</Link><Link href="/panel/negocio/tablero" className={tab(active === "tablero")}>Tablero contable</Link></nav>;
+export function BusinessTabs({ active }: { active: "datos" | "tablero" | "gastos" }) {
+  const tab = (on: boolean) => `shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold ${on ? "bg-[var(--accent)] text-[var(--on-accent)]" : "text-[var(--ink-muted)]"}`;
+  return <nav className="flex max-w-full gap-1 overflow-x-auto rounded-full border border-[var(--line)] bg-[var(--surface-raised)] p-1 sm:w-fit"><Link href="/panel/negocio" className={tab(active === "datos")}>Datos y configuración</Link><Link href="/panel/negocio/tablero" className={tab(active === "tablero")}>Tablero contable</Link><Link href="/panel/negocio/gastos" className={tab(active === "gastos")}>Gastos</Link></nav>;
 }
 
 const STATUS_STYLES: Record<string, [string, string]> = {

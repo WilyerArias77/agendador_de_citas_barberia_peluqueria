@@ -17,6 +17,7 @@ type Props = {
   action: (state: BookingFormState, formData: FormData) => Promise<BookingFormState>;
   submitLabel: string;
   askEmail?: boolean;
+  emailHint?: string;
   // Reprogramar: sin datos de contacto y con la cita actual preseleccionada.
   hideContact?: boolean;
   initialServiceId?: string;
@@ -103,7 +104,7 @@ function HourColumns({ slots, value, onChange }: { slots: Slot[]; value: string;
   </div>;
 }
 
-export function BookingPicker({ slug, services, dates, barbers = [], action, submitLabel, askEmail, hideContact, initialServiceId, initialBarberId }: Props) {
+export function BookingPicker({ slug, services, dates, barbers = [], action, submitLabel, askEmail, emailHint, hideContact, initialServiceId, initialBarberId }: Props) {
   const [state, formAction] = useFormState(action, {});
   const [barberId, setBarberId] = useState(initialBarberId ?? (barbers.length === 1 ? barbers[0].id : ""));
   const [serviceId, setServiceId] = useState(initialServiceId ?? (services.length === 1 ? services[0].id : ""));
@@ -180,7 +181,7 @@ export function BookingPicker({ slug, services, dates, barbers = [], action, sub
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
         <label className="block text-sm font-medium">Nombre completo<input name="customerName" required minLength={2} maxLength={80} autoComplete="name" placeholder="Juan Pérez" className={inputClass} /></label>
         <label className="block text-sm font-medium">Celular / WhatsApp<input name="customerPhone" required type="tel" inputMode="tel" minLength={7} maxLength={20} autoComplete="tel" placeholder="300 123 4567" className={inputClass} /></label>
-        {askEmail && <label className="block text-sm font-medium sm:col-span-2">Correo (opcional)<input name="customerEmail" type="email" maxLength={120} autoComplete="email" placeholder="tucorreo@ejemplo.com" className={inputClass} /></label>}
+        {askEmail && <label className="block text-sm font-medium sm:col-span-2">Correo (opcional)<input name="customerEmail" type="email" maxLength={120} autoComplete="email" placeholder="tucorreo@ejemplo.com" className={inputClass} />{emailHint && <span className="mt-1 block text-[12px] font-normal text-[var(--ink-muted)]">{emailHint}</span>}</label>}
         <label className="block text-sm font-medium sm:col-span-2">Nota (opcional)<input name="notes" maxLength={300} placeholder="Algo que debamos saber" className={inputClass} /></label>
       </div>
     </section>}

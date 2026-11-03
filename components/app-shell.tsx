@@ -8,7 +8,8 @@ import { SignOutButton } from "./sign-out-button";
 const navigation = [
   { href: "/panel", label: "Inicio", icon: "grid", ownerOnly: false },
   { href: "/panel/barberos", label: "Barberos", icon: "scissors", ownerOnly: true },
-  { href: "/panel/citas", label: "Citas", icon: "calendar", ownerOnly: false },
+  { href: "/panel/calendario", label: "Calendario", icon: "calendar", ownerOnly: false },
+  { href: "/panel/citas", label: "Citas", icon: "list", ownerOnly: false },
   { href: "/panel/clientes", label: "Clientes", icon: "users", ownerOnly: false },
   { href: "/panel/servicios", label: "Servicios y tarifas", icon: "tag", ownerOnly: true },
   { href: "/panel/disponibilidad", label: "Disponibilidad", icon: "clock", ownerOnly: true },
@@ -16,7 +17,7 @@ const navigation = [
 ] as const;
 
 function Icon({ name }: { name: string }) {
-  const paths: Record<string, string> = { grid: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z", tag: "M20 13 13 20l-9-9V4h7l9 9Z M7.5 7.5h.01", clock: "M12 7v5l3 2 M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z", calendar: "M8 3v4M16 3v4M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z", store: "M4 10v10h16V10M3 6l2-3h14l2 3v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0Z M10 20v-5h4v5", scissors: "M6 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z M20 4 8.1 15.9 M14.5 14.5 20 20 M8.1 8.1 12 12", users: "M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M22 20v-2a4 4 0 0 0-3-3.87 M16 2.13a4 4 0 0 1 0 7.75" };
+  const paths: Record<string, string> = { grid: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z", list: "M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01", tag: "M20 13 13 20l-9-9V4h7l9 9Z M7.5 7.5h.01", clock: "M12 7v5l3 2 M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z", calendar: "M8 3v4M16 3v4M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z", store: "M4 10v10h16V10M3 6l2-3h14l2 3v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0Z M10 20v-5h4v5", scissors: "M6 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z M20 4 8.1 15.9 M14.5 14.5 20 20 M8.1 8.1 12 12", users: "M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M22 20v-2a4 4 0 0 0-3-3.87 M16 2.13a4 4 0 0 1 0 7.75" };
   return <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" viewBox="0 0 24 24"><path d={paths[name]} /></svg>;
 }
 

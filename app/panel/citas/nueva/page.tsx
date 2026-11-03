@@ -16,7 +16,7 @@ export default async function NewBookingPage() {
       <section className={`${cardClass} p-5 sm:p-8`}>
         {picker.services.length === 0
           ? <p className="text-[var(--ink-muted)]">Primero agrega al menos un servicio activo en <Link href="/panel/servicios" className="font-semibold text-[var(--accent)]">Servicios</Link>.</p>
-          : <BookingPicker slug={organization.slug} barbers={barberId ? [] : picker.barbers} initialBarberId={barberId ?? undefined} services={picker.services} dates={picker.dates} action={createPanelBooking} submitLabel="Crear cita" />}
+          : <BookingPicker slug={organization.slug} barbers={barberId ? [] : picker.barbers} initialBarberId={barberId ?? undefined} services={picker.services} dates={picker.dates} action={createPanelBooking} submitLabel="Crear cita" askEmail emailHint="Le enviaremos la confirmación de la cita a este correo." />}
       </section>
     </div>
   </main>;

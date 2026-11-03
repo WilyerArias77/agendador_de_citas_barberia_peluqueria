@@ -8,6 +8,7 @@ import { APIError } from "better-auth/api";
 import { auth } from "../../lib/auth";
 import { createBooking, normalizePhone, rescheduleBooking } from "../../lib/booking";
 import { isValidPolicyUrl, registerCustomer } from "../../lib/customers";
+import { isValidEmail, sendBookingEmail } from "../../lib/email";
 import { requireActiveOrganization, requireActiveOwner } from "../../lib/organization";
 import { prisma } from "../../lib/prisma";
 import { addDays, isValidDate, isValidTime, toMinutes, zonedToUtc } from "../../lib/time";
@@ -116,9 +117,13 @@ const BOOKING_STATUSES = ["confirmed", "completed", "cancelled", "no_show"] as c
 export async function setBookingStatus(bookingId: string, status: string) {
   const { organization, barberId } = await requireActiveOrganization();
   if (!(BOOKING_STATUSES as readonly string[]).includes(status)) return;
-  await prisma.booking.updateMany({ where: { id: bookingId, organizationId: organization.id, ...(barberId ? { barberId } : {}) }, data: { status } });
-  revalidatePath("/panel");
-  revalidatePath("/panel/citas");
+  const where = { id: bookingId, organizationId: organization.id, ...(barberId ? { barberId } : {}) };
+  const previous = await prisma.booking.findFirst({ where, select: { status: true } });
+  if (!previous) return;
+  await prisma.booking.updateMany({ where, data: { status } });
+  // Al cancelar una cita se avisa al cliente por correo.
+  if (status === "cancelled" && previous.status !== "cancelled") await sendBookingEmail(bookingId, "cancelled");
+  revalidatePath("/panel", "layout");
 }
 
 export async function reschedulePanelBooking(bookingId: string, _state: BookingFormState, formData: FormData): Promise<BookingFormState> {
@@ -134,12 +139,15 @@ export async function reschedulePanelBooking(bookingId: string, _state: BookingF
     fromPanel: true
   });
   if (!result.ok) return { error: result.error };
-  revalidatePath("/panel");
+  await sendBookingEmail(bookingId, "rescheduled");
+  revalidatePath("/panel", "layout");
   redirect("/panel/citas?reprogramada=1");
 }
 
 export async function createPanelBooking(_state: BookingFormState, formData: FormData): Promise<BookingFormState> {
   const { organization, barberId } = await requireActiveOrganization();
+  const customerEmail = text(formData, "customerEmail", 120).toLowerCase();
+  if (customerEmail && !isValidEmail(customerEmail)) return { error: "Escribe un correo válido para el cliente." };
   const result = await createBooking({
     organizationId: organization.id,
     timezone: organization.timezone,
@@ -148,11 +156,13 @@ export async function createPanelBooking(_state: BookingFormState, formData: For
     startsAt: text(formData, "startsAt", 40),
     customerName: text(formData, "customerName", 80),
     customerPhone: text(formData, "customerPhone", 20),
+    customerEmail,
     notes: text(formData, "notes", 300),
     fromPanel: true
   });
   if (!result.ok) return { error: result.error };
-  revalidatePath("/panel");
+  await sendBookingEmail(result.bookingId, "created");
+  revalidatePath("/panel", "layout");
   redirect("/panel/citas?creada=1");
 }
 
@@ -248,4 +258,33 @@ export async function createCustomer(_state: ActionState, formData: FormData): P
   const result = await registerCustomer(organization, formData, { source: "panel", createdByUserId: session.user.id });
   if (result.success) revalidatePath("/panel/clientes");
   return result;
+}
+
+// ---------- Gastos (solo dueño) ----------
+
+export async function createExpense(_state: ActionState, formData: FormData): Promise<ActionState> {
+  const { organization, session } = await requireActiveOwner();
+  const date = text(formData, "date", 10);
+  const description = text(formData, "description", 200);
+  const quantity = Number(text(formData, "quantity", 20).replace(",", "."));
+  const unitPrice = Number(text(formData, "unitPrice", 20).replace(/[^\d]/g, ""));
+  const supplier = text(formData, "supplier", 120);
+  const responsible = text(formData, "responsible", 120);
+  if (!isValidDate(date)) return { error: "Elige la fecha del gasto." };
+  if (description.length < 2) return { error: "Escribe la descripción del gasto." };
+  if (!Number.isFinite(quantity) || quantity <= 0 || quantity > 1_000_000) return { error: "La cantidad debe ser un número mayor que 0." };
+  if (!Number.isInteger(unitPrice) || unitPrice <= 0) return { error: "El valor de la compra debe ser un número entero mayor que 0." };
+  const total = Math.round(quantity * unitPrice);
+  if (total > 2_000_000_000) return { error: "El total es demasiado alto. Revisa la cantidad y el valor." };
+  if (supplier.length < 2) return { error: "Escribe el proveedor." };
+  if (responsible.length < 2) return { error: "Escribe el responsable." };
+  await prisma.expense.create({ data: { organizationId: organization.id, date, description, quantity: Math.round(quantity * 100) / 100, unitPrice, total, supplier, responsible, createdByUserId: session.user.id } });
+  revalidatePath("/panel/negocio/gastos");
+  return { success: `Gasto registrado: ${description}.` };
+}
+
+export async function deleteExpense(expenseId: string) {
+  const { organization } = await requireActiveOwner();
+  await prisma.expense.deleteMany({ where: { id: expenseId, organizationId: organization.id } });
+  revalidatePath("/panel/negocio/gastos");
 }

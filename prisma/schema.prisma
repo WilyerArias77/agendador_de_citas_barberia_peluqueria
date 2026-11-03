@@ -104,6 +104,7 @@ model Organization {
   barbers       Barber[]
   customers     Customer[]
   payments      PaymentReport[]
+  expenses      Expense[]
   @@index([ownerId])
 }
 
@@ -180,6 +181,24 @@ model PaymentReport {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   @@index([status, createdAt])
   @@index([organizationId])
+}
+
+// Gastos del negocio (solo el dueño). Fecha "YYYY-MM-DD"; valores en pesos enteros; total = cantidad × valor.
+model Expense {
+  id              String       @id @default(cuid())
+  organizationId  String
+  date            String
+  description     String
+  quantity        Float
+  unitPrice       Int
+  total           Int
+  supplier        String
+  responsible     String
+  createdByUserId String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  @@index([organizationId, date])
 }
 
 model WeeklyAvailability {

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ActionForm, InlineAction } from "../../../components/action-form";
 import { PageHeader, cardClass, fieldClass } from "../../../components/panel-ui";
 import { requireOwnerOrganization } from "../../../lib/organization";
@@ -43,6 +44,7 @@ export default async function BarbersPage() {
             <span className="text-[13px] font-semibold text-[var(--accent)] group-open:hidden">Gestionar</span>
           </summary>
           <div className="space-y-4 border-t border-[var(--line)] bg-[var(--surface)] px-5 py-5">
+            <Link href={`/panel/calendario?barbero=${barber.id}`} className="inline-block text-[13px] font-semibold text-[var(--accent)]">Ver calendario de {barber.name} →</Link>
             {!barber.user && <ActionForm action={giveBarberAccess.bind(null, barber.id)} submitLabel="Crear acceso" pendingLabel="Creando…"><p className="mb-2 text-[13px] font-semibold">Dar acceso al panel</p><AccessFields /></ActionForm>}
             <InlineAction action={toggleBarber.bind(null, barber.id)} label={barber.active ? "Desactivar (no recibirá nuevas reservas ni podrá entrar)" : "Activar"} confirm={barber.active ? `¿Desactivar a ${barber.name}? Sus citas existentes se conservan.` : undefined} className={`text-[13px] font-semibold ${barber.active ? "text-[var(--danger)]" : "text-[var(--accent)]"}`} />
           </div>
