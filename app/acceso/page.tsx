@@ -29,6 +29,7 @@ export default function AccessPage() {
     <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
       <label className="block text-sm font-medium">Correo electrónico<input name="email" type="email" autoComplete="email" placeholder="hola@tubarberia.com" className={authInputClass} required /></label>
       <label className="block text-sm font-medium">Contraseña<input name="password" type="password" autoComplete="current-password" placeholder="••••••••" className={authInputClass} required /></label>
+      <p className="text-right text-[13px]"><Link href="/recuperar" className="font-semibold text-[var(--accent)]">¿Olvidaste tu contraseña?</Link></p>
       {error && <p role="alert" className="rounded border border-[var(--danger)]/40 bg-[var(--danger)]/10 p-3 text-sm text-[var(--danger)]">{error}</p>}
       <button className="h-11 w-full rounded-[10px] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)]" type="submit" disabled={loading}>{loading ? "Entrando…" : "Entrar a mi agenda"}</button>
     </form>

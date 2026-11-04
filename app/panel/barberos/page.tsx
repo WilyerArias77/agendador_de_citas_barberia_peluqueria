@@ -23,7 +23,7 @@ export default async function BarbersPage() {
     <div className="mx-auto max-w-[1100px] space-y-6 p-6 lg:p-8">
       <section className={`${cardClass} p-5`}>
         <h2 className="text-[18px] font-semibold">Agregar barbero</h2>
-        <p className="mt-1 text-[13px] text-[var(--ink-muted)]">Tus clientes elegirán primero al barbero al reservar. Si le das correo y contraseña, tendrá su propio perfil para agendar, reprogramar y cancelar sus citas, y registrar clientes.</p>
+        <p className="mt-1 text-[13px] text-[var(--ink-muted)]">Tus clientes elegirán primero al barbero al reservar. Si le das correo y contraseña, tendrá su propio perfil para ver su calendario y registrar clientes. Las citas solo las gestionas tú.</p>
         <ActionForm action={createBarber} submitLabel="+ Agregar barbero" pendingLabel="Agregando…" resetOnSuccess className="mt-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm font-medium">Nombre<input name="name" required minLength={2} maxLength={80} placeholder="Andrés Gómez" className={fieldClass} /></label>

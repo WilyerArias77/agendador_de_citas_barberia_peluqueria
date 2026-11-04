@@ -15,7 +15,8 @@ export async function isRateLimited(key: string, max: number, windowSeconds: num
   return false;
 }
 
-export function clientIp() {
-  const forwarded = headers().get("x-forwarded-for") ?? "";
-  return forwarded.split(",")[0]?.trim() || headers().get("x-real-ip") || "unknown";
+export async function clientIp(source?: Headers) {
+  const list = source ?? await headers();
+  const forwarded = list.get("x-forwarded-for") ?? "";
+  return forwarded.split(",")[0]?.trim() || list.get("x-real-ip") || "unknown";
 }

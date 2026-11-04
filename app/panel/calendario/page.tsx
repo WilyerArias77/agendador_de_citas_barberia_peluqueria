@@ -15,7 +15,8 @@ function mondayOf(date: string) {
   return addDays(date, -((weekdayOf(date) + 6) % 7));
 }
 
-export default async function CalendarPage({ searchParams }: { searchParams: { semana?: string; barbero?: string } }) {
+export default async function CalendarPage(props: { searchParams: Promise<{ semana?: string; barbero?: string }> }) {
+  const searchParams = await props.searchParams;
   const { organization, isOwner, barberId } = await requireOrganization();
   const tz = organization.timezone;
   const today = todayInZone(tz);
@@ -45,7 +46,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: { s
 
   return <main className="min-h-screen bg-[var(--surface-sunken)]">
     <AutoRefresh seconds={30} />
-    <PageHeader eyebrow="Agenda" title={isOwner ? (selectedName ? `Calendario de ${selectedName}` : "Calendario del negocio") : "Mi calendario"} actions={<Link href="/panel/citas/nueva" className="flex h-10 items-center rounded-[10px] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)]">+ Nueva cita</Link>} />
+    <PageHeader eyebrow="Agenda" title={isOwner ? (selectedName ? `Calendario de ${selectedName}` : "Calendario del negocio") : "Mi calendario"} actions={isOwner && <Link href="/panel/citas/nueva" className="flex h-10 items-center rounded-[10px] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)]">+ Nueva cita</Link>} />
     <div className="mx-auto max-w-[1440px] space-y-5 p-6 lg:p-8">
       {isOwner && barbers.length > 0 && <nav aria-label="Barberos" className="flex gap-2 overflow-x-auto pb-1">
         <Link href={href(weekStart, "")} className={chip(!selected)}>Todos</Link>
@@ -78,7 +79,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: { s
           </section>;
         })}
       </div>
-      <p className="text-[12px] text-[var(--ink-muted)]">El calendario se actualiza solo cada 30 segundos. Las citas canceladas no se muestran. Para reprogramar o cancelar, ve a <Link href="/panel/citas" className="font-semibold text-[var(--accent)]">Citas</Link>.</p>
+      <p className="text-[12px] text-[var(--ink-muted)]">El calendario se actualiza solo cada 30 segundos. Las citas canceladas no se muestran.{isOwner ? <> Para reprogramar o cancelar, ve a <Link href="/panel/citas" className="font-semibold text-[var(--accent)]">Citas</Link>.</> : " Para cambios en tus citas, habla con el administrador."}</p>
     </div>
   </main>;
 }

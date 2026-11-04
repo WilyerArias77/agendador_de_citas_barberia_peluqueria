@@ -73,3 +73,15 @@ export async function sendBookingEmail(bookingId: string, kind: BookingEmailKind
 </div>`;
   return sendEmail({ to, subject: `${copy.subject} · ${org.name}`, html });
 }
+
+// Correo simple con un botón (verificación de cuenta, recuperación de contraseña).
+export function actionEmailHtml({ title, intro, buttonLabel, url, footer }: { title: string; intro: string; buttonLabel: string; url: string; footer: string }) {
+  return `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1a1a">
+  <p style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:.08em;margin:0">Growing Solutions · Agenda</p>
+  <h1 style="font-size:22px;margin:8px 0 12px">${escapeHtml(title)}</h1>
+  <p style="font-size:15px">${escapeHtml(intro)}</p>
+  <p style="margin:24px 0"><a href="${escapeHtml(url)}" style="background:#c9a45c;color:#111;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold;display:inline-block">${escapeHtml(buttonLabel)}</a></p>
+  <p style="font-size:12px;color:#777">Si el botón no funciona, copia este enlace en tu navegador:<br>${escapeHtml(url)}</p>
+  <p style="font-size:12px;color:#777">${escapeHtml(footer)}</p>
+</div>`;
+}

@@ -14,7 +14,8 @@ function pastBookingError(booking: { startsAt: Date }) {
   return booking.startsAt.getTime() <= Date.now() ? apiError("Esa cita ya pasó, no se puede modificar.", 409) : null;
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await authenticateAgent(request);
   if ("response" in auth) return auth.response;
   const { organization } = auth;
@@ -30,7 +31,8 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   return apiJson({ booking: serializeBooking(booking, organization.timezone) });
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await authenticateAgent(request);
   if ("response" in auth) return auth.response;
   const phone = new URL(request.url).searchParams.get("phone") ?? "";

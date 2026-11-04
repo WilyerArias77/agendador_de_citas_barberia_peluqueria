@@ -3,7 +3,7 @@ import { ActionForm, InlineAction } from "../../../components/action-form";
 import { CopyButton } from "../../../components/copy-button";
 import { BusinessTabs, PageHeader, cardClass, fieldClass } from "../../../components/panel-ui";
 import { WhatsappButton } from "../../../components/whatsapp-button";
-import { PLAN_PRICE_IN_CENTS } from "../../../lib/billing";
+import { MONTHLY_PER_BARBER_IN_CENTS } from "../../../lib/billing";
 import { formatLongDate, formatMoney } from "../../../lib/time";
 import { publicBookingUrl, requireOwnerOrganization, trialDaysLeft } from "../../../lib/organization";
 import { regenerateAgentKey, revokeAgentKey, updateBusiness } from "../actions";
@@ -43,7 +43,7 @@ export default async function BusinessPage() {
       <section className={`${cardClass} p-5`}>
         <h2 className="text-[18px] font-semibold">Plan</h2>
         <p className="mt-2 text-sm">{organization.subscriptionStatus === "active" ? `Plan Profesional activo${organization.currentPeriodEnd ? ` hasta el ${formatLongDate(organization.currentPeriodEnd, organization.timezone).toLowerCase()}` : ""}.` : daysLeft !== null ? `Prueba gratis · ${daysLeft === 1 ? "queda 1 día" : `quedan ${daysLeft} días`}.` : "Plan inactivo."}</p>
-        <p className="mt-1 text-[13px] text-[var(--ink-muted)]">{formatMoney(PLAN_PRICE_IN_CENTS)} al mes, por transferencia a Nequi.</p>
+        <p className="mt-1 text-[13px] text-[var(--ink-muted)]">{formatMoney(MONTHLY_PER_BARBER_IN_CENTS)} al mes por barbero (más la instalación, una sola vez), por transferencia a Nequi.</p>
         <Link href="/suscripcion" className="mt-4 inline-flex h-10 items-center rounded-[10px] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)]">{organization.subscriptionStatus === "active" ? "Renovar plan" : "Activar plan"}</Link>
       </section>
 

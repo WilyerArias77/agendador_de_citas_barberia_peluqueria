@@ -6,6 +6,8 @@ const messages: Record<string, string> = {
   PASSWORD_TOO_LONG: "La contraseña es demasiado larga.",
   INVALID_EMAIL: "Escribe un correo electrónico válido.",
   INVALID_PASSWORD: "Contraseña incorrecta.",
+  INVALID_TOKEN: "El enlace no es válido o ya venció. Pide uno nuevo.",
+  EMAIL_NOT_VERIFIED: "Confirma tu correo antes de continuar.",
   TOO_MANY_REQUESTS: "Demasiados intentos. Espera un momento y vuelve a intentarlo."
 };
 

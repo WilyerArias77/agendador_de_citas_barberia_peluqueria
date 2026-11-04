@@ -2,13 +2,13 @@ import Link from "next/link";
 import { BookingPicker } from "../../../../components/booking-picker";
 import { PageHeader, cardClass } from "../../../../components/panel-ui";
 import { getPickerData } from "../../../../lib/booking";
-import { requireOrganization } from "../../../../lib/organization";
+import { requireOwnerOrganization } from "../../../../lib/organization";
 import { createPanelBooking } from "../../actions";
 
 export const metadata = { title: "Nueva cita" };
 
 export default async function NewBookingPage() {
-  const { organization, barberId } = await requireOrganization();
+  const { organization, barberId } = await requireOwnerOrganization();
   const picker = await getPickerData(organization);
   return <main className="min-h-screen bg-[var(--surface-sunken)]">
     <PageHeader eyebrow="Agenda" title="Nueva cita" actions={<Link href="/panel/citas" className="text-sm font-semibold text-[var(--accent)]">← Volver a citas</Link>} />

@@ -7,7 +7,9 @@ import { formatLongDate, formatMoney, formatTime } from "../../../../lib/time";
 
 export const dynamic = "force-dynamic";
 
-export default async function BookingConfirmedPage({ params, searchParams }: { params: { slug: string }; searchParams: { cita?: string } }) {
+export default async function BookingConfirmedPage(props: { params: Promise<{ slug: string }>; searchParams: Promise<{ cita?: string }> }) {
+  const params = await props.params;
+  const searchParams = await props.searchParams;
   const booking = searchParams.cita ? await prisma.booking.findFirst({ where: { id: searchParams.cita, organization: { slug: params.slug }, createdAt: { gte: new Date(Date.now() - 86_400_000) } }, include: { service: true, organization: true, barber: true } }) : null;
   if (!booking) notFound();
   const { organization } = booking;

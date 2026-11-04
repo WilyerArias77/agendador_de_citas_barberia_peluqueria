@@ -5,7 +5,7 @@ import { AuthLayout, authInputClass } from "../../components/auth-layout";
 import { CopyButton } from "../../components/copy-button";
 import { SignOutButton } from "../../components/sign-out-button";
 import { WhatsappButton } from "../../components/whatsapp-button";
-import { NEQUI_NUMBER, PLAN_NAME, PLAN_PRICE_IN_CENTS, supportWhatsapp } from "../../lib/billing";
+import { MONTHLY_PER_BARBER_IN_CENTS, NEQUI_NUMBER, PLAN_NAME, PLAN_TIERS, amountDue, supportWhatsapp } from "../../lib/billing";
 import { hasActiveAccess, requireOrganization, trialDaysLeft } from "../../lib/organization";
 import { prisma } from "../../lib/prisma";
 import { formatLongDate, formatMoney } from "../../lib/time";
@@ -13,13 +13,16 @@ import { reportPayment } from "./actions";
 
 export const metadata = { title: "Activa tu plan" };
 
-export default async function SubscriptionPage() {
+export default async function SubscriptionPage(props: { searchParams: Promise<{ sinPrueba?: string }> }) {
+  const { sinPrueba } = await props.searchParams;
   const { organization, isOwner } = await requireOrganization();
   if (!isOwner) redirect("/panel");
   const active = hasActiveAccess(organization);
   const daysLeft = trialDaysLeft(organization);
   const pending = await prisma.paymentReport.findFirst({ where: { organizationId: organization.id, status: "pending" }, orderBy: { createdAt: "desc" } });
-  const price = formatMoney(PLAN_PRICE_IN_CENTS);
+  const due = await amountDue(organization);
+  const price = formatMoney(due.totalInCents);
+  const perBarber = formatMoney(MONTHLY_PER_BARBER_IN_CENTS);
   const tz = organization.timezone;
 
   const title = organization.subscriptionStatus === "active" && active ? "Tu plan está activo."
@@ -35,10 +38,21 @@ export default async function SubscriptionPage() {
     <p className="eyebrow mt-10 lg:mt-0">{organization.name}</p>
     <h2 className="display mt-3 text-[32px] leading-[1.1]">{title}</h2>
     <p className="mt-4 text-[var(--ink-muted)]">{status}</p>
+    {sinPrueba && <p role="status" className="mt-4 rounded border border-[#ff1493]/40 bg-[#ff1493]/10 p-3 text-[13px]">Este negocio ya había usado su prueba gratis (mismo WhatsApp, o mismo nombre y dirección). Activa tu plan para empezar a usar el panel.</p>}
 
     <div className="mt-8 rounded-[10px] border border-[var(--line)] bg-[var(--surface)] p-5">
-      <div className="flex items-baseline justify-between gap-3"><p className="font-semibold">{PLAN_NAME}</p><p className="tabular text-[20px] font-semibold text-[var(--accent)]">{price}<span className="text-[13px] font-normal text-[var(--ink-muted)]"> / mes</span></p></div>
-      <p className="mt-1 text-[13px] text-[var(--ink-muted)]">Agenda ilimitada, barberos, clientes, tablero contable y página de reservas.</p>
+      <p className="font-semibold">{PLAN_NAME}</p>
+      <p className="mt-1 text-[13px] text-[var(--ink-muted)]">Agenda ilimitada, calendario por barbero, clientes, tableros de ingresos y gastos, y página de reservas.</p>
+      <table className="mt-4 w-full text-[13px]"><tbody className="divide-y divide-[var(--line)]">
+        {PLAN_TIERS.map((tier) => <tr key={tier.label}><td className="py-2">{tier.label}</td><td className="tabular py-2 text-right">{formatMoney(tier.setupInCents)} <span className="text-[var(--ink-muted)]">único pago</span></td><td className="tabular py-2 text-right">+ {perBarber} <span className="text-[var(--ink-muted)]">/ mes por barbero</span></td></tr>)}
+      </tbody></table>
+      <div className="mt-4 rounded border border-[var(--accent)] bg-[var(--accent-soft)] p-3 text-[13px]">
+        <p className="font-semibold">Tu pago ahora · {due.barbers === 1 ? "1 barbero" : `${due.barbers} barberos`}</p>
+        {due.setupInCents > 0 && <p className="mt-1 flex justify-between gap-3"><span>Instalación (único pago)</span><span className="tabular">{formatMoney(due.setupInCents)}</span></p>}
+        <p className="mt-1 flex justify-between gap-3"><span>Mensualidad ({due.barbers} × {perBarber})</span><span className="tabular">{formatMoney(due.monthlyInCents)}</span></p>
+        <p className="mt-2 flex justify-between gap-3 border-t border-[var(--line)] pt-2 font-semibold"><span>Total</span><span className="tabular text-[var(--accent)]">{price}</span></p>
+      </div>
+      <p className="mt-2 text-[12px] text-[var(--ink-muted)]">Se cuentan los barberos activos en tu panel (mínimo 1).</p>
     </div>
 
     <ol className="mt-6 space-y-4 text-sm">
@@ -51,7 +65,7 @@ export default async function SubscriptionPage() {
             <label className="mt-4 block text-sm font-medium">Referencia de la transferencia<input name="reference" required minLength={4} maxLength={60} placeholder="Ej. M1234567" className={authInputClass} /></label>
           </ActionForm>}</li>
       <li><p className="font-semibold">3. Envíanos el comprobante</p>
-        <div className="mt-2"><WhatsappButton phone={supportWhatsapp()} variant="inline" label="Enviar comprobante por WhatsApp" message={`Hola, pagué el ${PLAN_NAME} (${price}) de ${organization.name} (${organization.slug}). Adjunto el comprobante.`} /></div></li>
+        <div className="mt-2"><WhatsappButton phone={supportWhatsapp()} variant="inline" label="Enviar comprobante por WhatsApp" message={`Hola, pagué el ${PLAN_NAME} (${price}${due.setupInCents > 0 ? ", incluye instalación" : ""}) de ${organization.name} (${organization.slug}). Adjunto el comprobante.`} /></div></li>
     </ol>
     <p className="mt-4 text-[12px] text-[var(--ink-muted)]">Activamos tu plan apenas confirmemos la transferencia.</p>
 

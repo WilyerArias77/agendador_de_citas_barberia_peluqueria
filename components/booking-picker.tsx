@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 
 export type PickerService = { id: string; name: string; description: string; duration: string; price: string };
 export type PickerDate = { value: string; open: boolean };
@@ -105,7 +106,7 @@ function HourColumns({ slots, value, onChange }: { slots: Slot[]; value: string;
 }
 
 export function BookingPicker({ slug, services, dates, barbers = [], action, submitLabel, askEmail, emailHint, hideContact, initialServiceId, initialBarberId }: Props) {
-  const [state, formAction] = useFormState(action, {});
+  const [state, formAction] = useActionState(action, {});
   const [barberId, setBarberId] = useState(initialBarberId ?? (barbers.length === 1 ? barbers[0].id : ""));
   const [serviceId, setServiceId] = useState(initialServiceId ?? (services.length === 1 ? services[0].id : ""));
   const [date, setDate] = useState(dates.find((d) => d.open)?.value ?? "");

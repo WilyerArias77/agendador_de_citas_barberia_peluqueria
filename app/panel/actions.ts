@@ -7,7 +7,7 @@ import { generateApiKey } from "../../lib/agent-api";
 import { APIError } from "better-auth/api";
 import { auth } from "../../lib/auth";
 import { createBooking, normalizePhone, rescheduleBooking } from "../../lib/booking";
-import { isValidPolicyUrl, registerCustomer } from "../../lib/customers";
+import { isValidPolicyUrl, registerCustomer, updateCustomerRecord } from "../../lib/customers";
 import { isValidEmail, sendBookingEmail } from "../../lib/email";
 import { requireActiveOrganization, requireActiveOwner } from "../../lib/organization";
 import { prisma } from "../../lib/prisma";
@@ -113,9 +113,9 @@ export async function deleteException(exceptionId: string) {
 
 const BOOKING_STATUSES = ["confirmed", "completed", "cancelled", "no_show"] as const;
 
-// El barbero solo puede tocar sus propias citas; el dueño, todas las del negocio.
+// Crear, reprogramar y cambiar el estado de las citas es solo del dueño (administrador).
 export async function setBookingStatus(bookingId: string, status: string) {
-  const { organization, barberId } = await requireActiveOrganization();
+  const { organization, barberId } = await requireActiveOwner();
   if (!(BOOKING_STATUSES as readonly string[]).includes(status)) return;
   const where = { id: bookingId, organizationId: organization.id, ...(barberId ? { barberId } : {}) };
   const previous = await prisma.booking.findFirst({ where, select: { status: true } });
@@ -127,7 +127,7 @@ export async function setBookingStatus(bookingId: string, status: string) {
 }
 
 export async function reschedulePanelBooking(bookingId: string, _state: BookingFormState, formData: FormData): Promise<BookingFormState> {
-  const { organization, barberId } = await requireActiveOrganization();
+  const { organization, barberId } = await requireActiveOwner();
   if (barberId && !(await prisma.booking.count({ where: { id: bookingId, organizationId: organization.id, barberId } }))) return { error: "No encontramos esa cita en tu agenda." };
   const result = await rescheduleBooking({
     organizationId: organization.id,
@@ -145,7 +145,7 @@ export async function reschedulePanelBooking(bookingId: string, _state: BookingF
 }
 
 export async function createPanelBooking(_state: BookingFormState, formData: FormData): Promise<BookingFormState> {
-  const { organization, barberId } = await requireActiveOrganization();
+  const { organization, barberId } = await requireActiveOwner();
   const customerEmail = text(formData, "customerEmail", 120).toLowerCase();
   if (customerEmail && !isValidEmail(customerEmail)) return { error: "Escribe un correo válido para el cliente." };
   const result = await createBooking({
@@ -253,6 +253,7 @@ export async function toggleBarber(barberId: string) {
 
 // ---------- Clientes ----------
 
+// Los barberos pueden crear clientes; ver, modificar y eliminar sus datos es solo del dueño.
 export async function createCustomer(_state: ActionState, formData: FormData): Promise<ActionState> {
   const { organization, session } = await requireActiveOrganization();
   const result = await registerCustomer(organization, formData, { source: "panel", createdByUserId: session.user.id });
@@ -287,4 +288,17 @@ export async function deleteExpense(expenseId: string) {
   const { organization } = await requireActiveOwner();
   await prisma.expense.deleteMany({ where: { id: expenseId, organizationId: organization.id } });
   revalidatePath("/panel/negocio/gastos");
+}
+
+export async function updateCustomer(customerId: string, _state: ActionState, formData: FormData): Promise<ActionState> {
+  const { organization } = await requireActiveOwner();
+  const result = await updateCustomerRecord(organization.id, customerId, formData);
+  if (result.success) revalidatePath("/panel/clientes");
+  return result;
+}
+
+export async function deleteCustomer(customerId: string) {
+  const { organization } = await requireActiveOwner();
+  await prisma.customer.deleteMany({ where: { id: customerId, organizationId: organization.id } });
+  revalidatePath("/panel/clientes");
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { InlineAction } from "../../../components/action-form";
 import { PageHeader, StatusBadge, cardClass } from "../../../components/panel-ui";
-import { requireOrganization } from "../../../lib/organization";
+import { requireOwnerOrganization } from "../../../lib/organization";
 import { prisma } from "../../../lib/prisma";
 import { whatsappLink } from "../../../lib/whatsapp";
 import { addDays, dateInZone, formatDateStr, formatMoney, formatTime, todayInZone, zonedToUtc } from "../../../lib/time";
@@ -9,8 +9,9 @@ import { setBookingStatus } from "../actions";
 
 export const metadata = { title: "Citas" };
 
-export default async function BookingsPage({ searchParams }: { searchParams: { vista?: string; creada?: string; reprogramada?: string } }) {
-  const { organization, isOwner, barberId } = await requireOrganization();
+export default async function BookingsPage(props: { searchParams: Promise<{ vista?: string; creada?: string; reprogramada?: string }> }) {
+  const searchParams = await props.searchParams;
+  const { organization, isOwner, barberId } = await requireOwnerOrganization();
   const tz = organization.timezone;
   const past = searchParams.vista === "pasadas";
   const todayStart = zonedToUtc(todayInZone(tz), "00:00", tz);

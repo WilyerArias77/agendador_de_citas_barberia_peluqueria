@@ -3,15 +3,16 @@ import { notFound } from "next/navigation";
 import { BookingPicker } from "../../../../../components/booking-picker";
 import { PageHeader, cardClass } from "../../../../../components/panel-ui";
 import { getPickerData } from "../../../../../lib/booking";
-import { requireOrganization } from "../../../../../lib/organization";
+import { requireOwnerOrganization } from "../../../../../lib/organization";
 import { prisma } from "../../../../../lib/prisma";
 import { formatLongDate, formatTime } from "../../../../../lib/time";
 import { reschedulePanelBooking } from "../../../actions";
 
 export const metadata = { title: "Reprogramar cita" };
 
-export default async function RescheduleBookingPage({ params }: { params: { id: string } }) {
-  const { organization, barberId } = await requireOrganization();
+export default async function RescheduleBookingPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const { organization, barberId } = await requireOwnerOrganization();
   const booking = await prisma.booking.findFirst({ where: { id: params.id, organizationId: organization.id, status: "confirmed", ...(barberId ? { barberId } : {}) }, include: { service: true, barber: true } });
   if (!booking) notFound();
   const picker = await getPickerData(organization);

@@ -93,6 +93,7 @@ model Organization {
   agentApiKeyHash String?              @unique
   agentApiKeyHint String?
   privacyPolicyUrl String               @default("")
+  setupPaidAt   DateTime?
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
   owner         User                   @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Restrict)
@@ -173,6 +174,8 @@ model PaymentReport {
   id             String       @id @default(cuid())
   organizationId String
   amountInCents  Int
+  setupInCents   Int          @default(0)
+  barbers        Int          @default(1)
   reference      String
   payerName      String
   status         String       @default("pending")

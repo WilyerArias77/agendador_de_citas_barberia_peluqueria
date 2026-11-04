@@ -11,7 +11,7 @@ import { clientIp, isRateLimited } from "../../../lib/rate-limit";
 export async function createPublicBooking(slug: string, _state: BookingFormState, formData: FormData): Promise<BookingFormState> {
   const organization = await prisma.organization.findUnique({ where: { slug } });
   if (!organization || !hasActiveAccess(organization)) return { error: "Este negocio no está recibiendo reservas en línea por ahora." };
-  if (await isRateLimited(`booking:${clientIp()}`, 5, 600)) return { error: "Hiciste demasiadas reservas seguidas. Espera unos minutos o escríbele al negocio por WhatsApp." };
+  if (await isRateLimited(`booking:${await clientIp()}`, 5, 600)) return { error: "Hiciste demasiadas reservas seguidas. Espera unos minutos o escríbele al negocio por WhatsApp." };
   const result = await createBooking({
     organizationId: organization.id,
     timezone: organization.timezone,
@@ -31,6 +31,6 @@ export async function createPublicBooking(slug: string, _state: BookingFormState
 export async function registerPublicCustomer(slug: string, _state: CustomerResult, formData: FormData): Promise<CustomerResult> {
   const organization = await prisma.organization.findUnique({ where: { slug } });
   if (!organization || !hasActiveAccess(organization)) return { error: "Este negocio no está recibiendo registros por ahora." };
-  if (await isRateLimited(`customer:${clientIp()}`, 5, 600)) return { error: "Hiciste demasiados registros seguidos. Espera unos minutos." };
+  if (await isRateLimited(`customer:${await clientIp()}`, 5, 600)) return { error: "Hiciste demasiados registros seguidos. Espera unos minutos." };
   return registerCustomer(organization, formData, { source: "public" });
 }

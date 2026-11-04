@@ -23,6 +23,8 @@ function Icon({ name }: { name: string }) {
 
 type Props = { children: React.ReactNode; organizationName: string; userName: string; publicUrl: string; trialDaysLeft: number | null; renewalDaysLeft: number | null; isOwner: boolean; isAdmin: boolean };
 
+const BARBER_PAGES: string[] = ["/panel/calendario", "/panel/clientes"];
+
 // Desde estos días antes del vencimiento se avisa al dueño que renueve la mensualidad.
 const RENEWAL_NOTICE_DAYS = 5;
 
@@ -32,14 +34,15 @@ function initials(name: string) {
 
 export function AppShell({ children, organizationName, userName, publicUrl, trialDaysLeft, renewalDaysLeft, isOwner, isAdmin }: Readonly<Props>) {
   const pathname = usePathname();
-  const items = navigation.filter((item) => isOwner || !item.ownerOnly);
+  // El barbero solo ve su calendario y el registro de clientes.
+  const items = navigation.filter((item) => isOwner || BARBER_PAGES.includes(item.href));
   const isActive = (href: string) => href === "/panel" ? pathname === href : pathname.startsWith(href);
 
   return <div className="min-h-screen bg-[var(--surface-sunken)] lg:pl-64">
     <aside className="panel-sidebar fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-[var(--line)] lg:flex">
-      <div className="shrink-0 border-b border-[var(--line)] p-5"><Logo href="/panel" className="h-14" /><p className="mt-3 text-[10px] font-semibold uppercase tracking-[.08em] text-[var(--accent)]">Agenda inteligente</p></div>
+      <div className="shrink-0 border-b border-[var(--line)] p-5"><Logo href={isOwner ? "/panel" : "/panel/calendario"} className="h-14" /><p className="mt-3 text-[10px] font-semibold uppercase tracking-[.08em] text-[var(--accent)]">Agenda inteligente</p></div>
       <nav className="sidebar-scroll min-h-0 flex-1 space-y-1 overflow-y-auto p-4"><p className="mb-3 px-3 text-[12px] font-semibold uppercase tracking-[.08em] text-[var(--ink-muted)]">Gestión</p>{items.map((item) => <Link key={item.href} href={item.href} data-active={isActive(item.href)} className="flex items-center gap-3 rounded px-3 py-3 text-sm transition"><Icon name={item.icon} />{item.label}</Link>)}
-        <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="mt-4 flex items-center gap-3 rounded px-3 py-3 text-sm transition"><svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>Mi página de reservas</a>
+        {isOwner && <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="mt-4 flex items-center gap-3 rounded px-3 py-3 text-sm transition"><svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>Mi página de reservas</a>}
         {isAdmin && <Link href="/admin/pagos" className="flex items-center gap-3 rounded px-3 py-3 text-sm transition"><Icon name="tag" />Administración · Pagos</Link>}
       </nav>
       <div className="shrink-0 border-t border-[var(--line)] p-4">
@@ -49,7 +52,7 @@ export function AppShell({ children, organizationName, userName, publicUrl, tria
     </aside>
 
     <div className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--surface-raised)] lg:hidden">
-      <div className="flex items-center justify-between px-5 py-3"><Logo href="/panel" className="h-10" /><SignOutButton className="text-[13px] text-[var(--ink-muted)]" /></div>
+      <div className="flex items-center justify-between px-5 py-3"><Logo href={isOwner ? "/panel" : "/panel/calendario"} className="h-10" /><SignOutButton className="text-[13px] text-[var(--ink-muted)]" /></div>
       <nav className="flex gap-1 overflow-x-auto px-3 pb-2">{items.map((item) => <Link key={item.href} href={item.href} className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-[13px] ${isActive(item.href) ? "bg-[var(--accent)] text-[var(--on-accent)]" : "text-[var(--ink-muted)]"}`}><Icon name={item.icon} />{item.label}</Link>)}</nav>
     </div>
 

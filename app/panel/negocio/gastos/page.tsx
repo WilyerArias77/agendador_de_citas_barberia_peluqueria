@@ -38,7 +38,8 @@ function Bars({ title, eyebrow, rows, empty }: { title: string; eyebrow: string;
   </section>;
 }
 
-export default async function ExpensesPage({ searchParams }: { searchParams: { desde?: string; hasta?: string } }) {
+export default async function ExpensesPage(props: { searchParams: Promise<{ desde?: string; hasta?: string }> }) {
+  const searchParams = await props.searchParams;
   const { organization } = await requireOwnerOrganization();
   const tz = organization.timezone;
   const today = todayInZone(tz);

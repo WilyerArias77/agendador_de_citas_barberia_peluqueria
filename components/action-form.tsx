@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import type { ActionState } from "../app/panel/actions";
 
 type Props = {
@@ -20,7 +21,7 @@ export function SubmitButton({ label, pendingLabel = "Guardando…", className }
 }
 
 export function ActionForm({ action, children, submitLabel, pendingLabel, className, resetOnSuccess, submitClassName }: Props) {
-  const [state, formAction] = useFormState(action, {});
+  const [state, formAction] = useActionState(action, {});
   const formRef = useRef<HTMLFormElement>(null);
   useEffect(() => { if (resetOnSuccess && state.success) formRef.current?.reset(); }, [state, resetOnSuccess]);
 

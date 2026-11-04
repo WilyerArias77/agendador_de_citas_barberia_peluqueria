@@ -1,12 +1,15 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { CopyButton } from "../../components/copy-button";
 import { PageHeader, StatusBadge, cardClass } from "../../components/panel-ui";
 import { publicBookingUrl, requireOrganization } from "../../lib/organization";
 import { prisma } from "../../lib/prisma";
 import { addDays, formatLongDate, formatMoney, formatTime, greeting, todayInZone, zonedToUtc } from "../../lib/time";
 
-export default async function PanelPage({ searchParams }: { searchParams: { nuevo?: string } }) {
+export default async function PanelPage(props: { searchParams: Promise<{ nuevo?: string }> }) {
+  const searchParams = await props.searchParams;
   const { session, organization, isOwner, barberId } = await requireOrganization();
+  if (!isOwner) redirect("/panel/calendario");
   const tz = organization.timezone;
   // El barbero ve solo su agenda.
   const mine = barberId ? { barberId } : {};

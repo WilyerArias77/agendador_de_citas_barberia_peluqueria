@@ -13,7 +13,8 @@ async function getOrganization(slug: string) {
   return prisma.organization.findUnique({ where: { slug }, select: { name: true, slug: true, address: true, phone: true } });
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const organization = await getOrganization(params.slug);
   return { title: organization ? `Política de datos · ${organization.name}` : "Negocio no encontrado" };
 }
@@ -22,7 +23,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return <section className="mt-8"><h2 className="text-[18px] font-semibold">{title}</h2><div className="mt-3 space-y-3 text-[15px] leading-7 text-[var(--ink-muted)]">{children}</div></section>;
 }
 
-export default async function PrivacyPolicyPage({ params }: { params: { slug: string } }) {
+export default async function PrivacyPolicyPage(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const organization = await getOrganization(params.slug);
   if (!organization) notFound();
   const { name } = organization;

@@ -37,7 +37,8 @@ function delta(current: number, previous: number) {
   return `${change >= 0 ? "▲" : "▼"} ${Math.abs(change).toFixed(0)}%`;
 }
 
-export default async function AccountingPage({ searchParams }: { searchParams: { desde?: string; hasta?: string; compDesde?: string; compHasta?: string } }) {
+export default async function AccountingPage(props: { searchParams: Promise<{ desde?: string; hasta?: string; compDesde?: string; compHasta?: string }> }) {
+  const searchParams = await props.searchParams;
   const { organization } = await requireOwnerOrganization();
   const tz = organization.timezone;
   const today = todayInZone(tz);
