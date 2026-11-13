@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { Booking, Organization, Service } from "@prisma/client";
 import { hasActiveAccess } from "./organization";
 import { prisma } from "./prisma";
+import { verifyAgentToken } from "./whatsapp-cloud";
 import { dateInZone, formatLongDate, formatTime } from "./time";
 
 // API para integraciones (n8n / agente de WhatsApp). Cada negocio tiene su propia llave.
@@ -24,14 +25,26 @@ export function apiJson(data: unknown, status = 200) {
   return NextResponse.json(data, { status, headers: { "Cache-Control": "no-store" } });
 }
 
-export async function authenticateAgent(request: Request): Promise<{ organization: Organization } | { response: NextResponse }> {
+// Dos formas de entrar:
+// - Permiso temporal "gsa." que la app emite por cada mensaje de WhatsApp (asistente multi-negocio).
+//   Va amarrado a un cliente: customerPhone viene del permiso y no se puede cambiar desde el agente.
+// - Llave fija del negocio (integraciones propias); ahí el teléfono lo envía quien llama.
+export async function authenticateAgent(request: Request): Promise<{ organization: Organization; customerPhone: string | null } | { response: NextResponse }> {
   const header = request.headers.get("authorization") ?? "";
   const key = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
   if (!key) return { response: apiError("Falta la llave de API (Authorization: Bearer …).", 401) };
+  if (key.startsWith("gsa.")) {
+    const grant = verifyAgentToken(key);
+    if (!grant) return { response: apiError("Permiso del asistente inválido o vencido.", 401) };
+    const organization = await prisma.organization.findUnique({ where: { id: grant.organizationId } });
+    if (!organization) return { response: apiError("Negocio no encontrado.", 401) };
+    if (!hasActiveAccess(organization)) return { response: apiError("El plan de este negocio está inactivo.", 403) };
+    return { organization, customerPhone: grant.customerPhone };
+  }
   const organization = await prisma.organization.findUnique({ where: { agentApiKeyHash: hashApiKey(key) } });
   if (!organization) return { response: apiError("Llave de API inválida.", 401) };
   if (!hasActiveAccess(organization)) return { response: apiError("El plan de este negocio está inactivo.", 403) };
-  return { organization };
+  return { organization, customerPhone: null };
 }
 
 export function serializeBooking(booking: Booking & { service: Service }, timezone: string) {

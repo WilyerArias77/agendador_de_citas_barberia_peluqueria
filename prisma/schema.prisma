@@ -106,6 +106,8 @@ model Organization {
   customers     Customer[]
   payments      PaymentReport[]
   expenses      Expense[]
+  whatsapp      WhatsAppConnection?
+  conversations WhatsAppConversation[]
   @@index([ownerId])
 }
 
@@ -254,4 +256,52 @@ model RateLimit {
   key         String @unique
   count       Int
   lastRequest BigInt
+}
+
+// Número de WhatsApp de cada negocio, conectado con el registro integrado de Meta (Cloud API).
+// Meta envía los mensajes de todos los negocios a un solo webhook; se enruta por phoneNumberId.
+model WhatsAppConnection {
+  id             String       @id @default(cuid())
+  organizationId String       @unique
+  wabaId         String
+  phoneNumberId  String       @unique
+  displayPhone   String       @default("")
+  verifiedName   String       @default("")
+  accessTokenEnc String
+  pinEnc         String?
+  mode           String       @default("coexistence")
+  status         String       @default("active")
+  agentEnabled   Boolean      @default(true)
+  lastError      String       @default("")
+  lastMessageAt  DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+// Una conversación por cliente. Si el dueño responde desde su celular, el asistente se pausa unas horas.
+model WhatsAppConversation {
+  id             String            @id @default(cuid())
+  organizationId String
+  customerPhone  String
+  customerName   String            @default("")
+  botPausedUntil DateTime?
+  lastMessageAt  DateTime          @default(now())
+  createdAt      DateTime          @default(now())
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  messages       WhatsAppMessage[]
+  @@unique([organizationId, customerPhone])
+  @@index([organizationId, lastMessageAt])
+}
+
+// waMessageId único: Meta reintenta los webhooks y así nunca se responde dos veces el mismo mensaje.
+model WhatsAppMessage {
+  id             String               @id @default(cuid())
+  conversationId String
+  waMessageId    String               @unique
+  direction      String
+  body           String
+  createdAt      DateTime             @default(now())
+  conversation   WhatsAppConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  @@index([conversationId, createdAt])
 }

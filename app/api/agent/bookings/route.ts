@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const auth = await authenticateAgent(request);
   if ("response" in auth) return auth.response;
   const { organization } = auth;
-  const phone = new URL(request.url).searchParams.get("phone") ?? "";
+  const phone = auth.customerPhone ?? new URL(request.url).searchParams.get("phone") ?? "";
   if (phone.replace(/\D/g, "").length < 7) return apiError("Falta el teléfono del cliente (phone).", 400);
   const upcoming = await prisma.booking.findMany({ where: { organizationId: organization.id, status: "confirmed", startsAt: { gte: new Date() } }, include: { service: true }, orderBy: { startsAt: "asc" }, take: 200 });
   const bookings = upcoming.filter((booking) => phonesMatch(booking.customerPhone, phone)).map((booking) => serializeBooking(booking, organization.timezone));
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     barberId: body.barberId ? String(body.barberId) : undefined,
     startsAt: String(body.startsAt ?? ""),
     customerName: String(body.customerName ?? ""),
-    customerPhone: String(body.customerPhone ?? ""),
+    customerPhone: auth.customerPhone ?? String(body.customerPhone ?? ""),
     notes: String(body.notes ?? "")
   });
   if (!result.ok) return apiError(result.error, result.status ?? 400);

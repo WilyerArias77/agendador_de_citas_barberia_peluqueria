@@ -45,3 +45,18 @@ export async function markSetupPaid(organizationId: string) {
   await prisma.organization.updateMany({ where: { id: organizationId, setupPaidAt: null }, data: { setupPaidAt: new Date() } });
   revalidatePath("/admin/pagos");
 }
+
+// ---------- Soporte del asistente de WhatsApp ----------
+
+export async function setConnectionAgent(connectionId: string, enabled: boolean) {
+  await requireAdmin();
+  await prisma.whatsAppConnection.update({ where: { id: connectionId }, data: { agentEnabled: enabled } });
+  revalidatePath("/admin/whatsapp");
+}
+
+// Tras corregir un problema (p. ej. permisos en Meta), vuelve a intentar con el mismo token.
+export async function resetConnectionError(connectionId: string) {
+  await requireAdmin();
+  await prisma.whatsAppConnection.update({ where: { id: connectionId }, data: { status: "active", lastError: "" } });
+  revalidatePath("/admin/whatsapp");
+}

@@ -21,7 +21,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
   const { organization } = auth;
   const body = await readJson(request);
   if (!body) return apiError("El cuerpo debe ser JSON.", 400);
-  const owned = await findOwnedBooking(organization.id, params.id, String(body.customerPhone ?? ""));
+  const owned = await findOwnedBooking(organization.id, params.id, auth.customerPhone ?? String(body.customerPhone ?? ""));
   if (!owned) return apiError("No encontramos una cita con ese código para este teléfono.", 404);
   const past = pastBookingError(owned);
   if (past) return past;
@@ -35,7 +35,7 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
   const params = await props.params;
   const auth = await authenticateAgent(request);
   if ("response" in auth) return auth.response;
-  const phone = new URL(request.url).searchParams.get("phone") ?? "";
+  const phone = auth.customerPhone ?? new URL(request.url).searchParams.get("phone") ?? "";
   const owned = await findOwnedBooking(auth.organization.id, params.id, phone);
   if (!owned) return apiError("No encontramos una cita con ese código para este teléfono.", 404);
   const past = pastBookingError(owned);
