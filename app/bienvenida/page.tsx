@@ -13,7 +13,7 @@ export default async function WelcomePage() {
     <p className="eyebrow mt-10 lg:mt-0">Hola, {session.user.name.split(" ")[0]}</p>
     <h2 className="display mt-3 text-[36px] leading-[1.1]">Confirma tu correo.</h2>
     <p className="mt-4 text-[var(--ink-muted)]">Te enviamos un enlace a tu correo. Ábrelo para confirmar tu cuenta y luego configura tu negocio. Si no te llegó, revisa el spam o pide uno nuevo.</p>
-    <div className="mt-8"><VerifyEmailNotice email={session.user.email} callbackURL="/bienvenida" /></div>
+    <div className="mt-8"><VerifyEmailNotice email={session.user.email} callbackURL="/correo-confirmado" /></div>
   </AuthLayout>;
   return <AuthLayout eyebrow="Último paso" heroTitle="Cuéntanos de tu negocio y abre tu agenda hoy.">
     <p className="eyebrow mt-10 lg:mt-0">Hola, {session.user.name.split(" ")[0]}</p>

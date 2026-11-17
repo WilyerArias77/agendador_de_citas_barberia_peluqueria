@@ -206,7 +206,7 @@ async function grantAccess(organizationId: string, barberId: string, name: strin
   if (password.length < 8 || password.length > 128) return "La contraseña del barbero debe tener al menos 8 caracteres.";
   if (await prisma.user.findUnique({ where: { email } })) return "Ese correo ya tiene una cuenta. Usa otro.";
   try {
-    const { user } = await auth.api.signUpEmail({ body: { name, email, password } });
+    const { user } = await auth.api.signUpEmail({ body: { name, email, password, callbackURL: "/correo-confirmado" } });
     await prisma.$transaction([
       prisma.organizationMember.create({ data: { organizationId, userId: user.id, role: "barber" } }),
       prisma.barber.update({ where: { id: barberId }, data: { userId: user.id } }),

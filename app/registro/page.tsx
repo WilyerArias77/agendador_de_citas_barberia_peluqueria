@@ -14,7 +14,7 @@ export default function RegisterPage() {
     event.preventDefault(); setError(null); setLoading(true);
     const form = new FormData(event.currentTarget);
     try {
-      const result = await authClient.signUp.email({ name: String(form.get("name")).trim(), email: String(form.get("email")).trim(), password: String(form.get("password")) });
+      const result = await authClient.signUp.email({ name: String(form.get("name")).trim(), email: String(form.get("email")).trim(), password: String(form.get("password")), callbackURL: "/correo-confirmado" });
       if (result.error) { setError(authErrorMessage(result.error, "No pudimos crear la cuenta. Inténtalo de nuevo.")); return; }
       window.location.assign("/bienvenida");
     } catch {
