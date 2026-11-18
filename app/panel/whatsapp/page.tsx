@@ -10,7 +10,7 @@ import { isPaidPlan, whatsappNumberLimit } from "../../../lib/whatsapp-access";
 import { HUMAN_TAKEOVER_HOURS, whatsappEmbeddedSignupConfig } from "../../../lib/whatsapp-cloud";
 import { disconnectWhatsApp, resumeAllConversations, setWhatsAppAgentEnabled } from "../whatsapp-actions";
 
-export const metadata = { title: "WhatsApp" };
+export const metadata = { title: "Agente de citas" };
 
 const CONNECT_LABEL = "Conectar tu número de WhatsApp Business al “Asistente de reservas”";
 
@@ -28,11 +28,12 @@ export default async function WhatsAppPage() {
   const tz = organization.timezone;
 
   return <main className="min-h-screen bg-[var(--surface-sunken)]">
-    <PageHeader eyebrow="Asistente de reservas" title="WhatsApp" />
+    <PageHeader eyebrow="Paso 7 · Asistente de reservas" title="Agente de citas" />
     <div className="mx-auto max-w-3xl space-y-6 p-6 lg:p-8">
+      {connections.length === 0 && <p role="status" className="rounded-[10px] border border-[var(--accent)] bg-[var(--accent-soft)] p-4 text-[15px] font-semibold">Para configurar su agente debe conectar su número de WhatsApp Business.</p>}
       <section className={`${cardClass} p-5`}>
         <h2 className="text-[18px] font-semibold">Números de WhatsApp de {organization.name}</h2>
-        <p className="mt-1 text-[13px] text-[var(--ink-muted)]">El Asistente de reservas responde a tus clientes por WhatsApp las 24 horas: informa servicios, precios y horarios, y agenda, cambia o cancela citas en tu calendario.</p>
+        <p className="mt-1 text-[13px] text-[var(--ink-muted)]">El Agente de citas responde a tus clientes por WhatsApp las 24 horas: informa servicios, precios y horarios, y agenda, cambia o cancela citas en tu calendario. En tu página de reservas ya atiende desde el ícono del barbero, aunque no hayas conectado WhatsApp.</p>
         <p className="mt-3 rounded border border-[var(--line)] bg-[var(--surface)] p-3 text-[13px]">
           {paid ? `Tu plan permite conectar hasta ${limit} números.` : <>En la prueba gratis puedes conectar <b>1 número</b>{daysLeft !== null ? ` (${daysLeft === 1 ? "queda 1 día" : `quedan ${daysLeft} días`})` : ""}. Al terminar la prueba el número se desconecta automáticamente. <Link href="/suscripcion" className="font-semibold text-[var(--accent)] underline">Activa tu plan</Link> para mantenerlo y conectar hasta 3.</>}
         </p>

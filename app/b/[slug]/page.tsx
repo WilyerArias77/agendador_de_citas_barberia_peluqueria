@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { BookingPicker } from "../../../components/booking-picker";
 import { CustomerSignup } from "../../../components/customer-form";
 import { SocialLinks } from "../../../components/social-links";
-import { WhatsappButton } from "../../../components/whatsapp-button";
+import { AgentChat } from "../../../components/agent-chat";
 import { getPickerData } from "../../../lib/booking";
 import { policyUrlFor } from "../../../lib/customers";
 import { hasActiveAccess } from "../../../lib/organization";
@@ -29,7 +29,6 @@ export default async function PublicBookingPage(props: { params: Promise<{ slug:
   if (!organization) notFound();
   const active = hasActiveAccess(organization);
   const picker = active ? await getPickerData(organization) : null;
-  const whatsappMessage = `Hola ${organization.name}, quiero información sobre una cita.`;
 
   return <main className="min-h-screen bg-[var(--surface-sunken)]">
     <header className="relative overflow-hidden border-b border-[var(--line)] bg-[var(--surface-raised)]">
@@ -38,7 +37,6 @@ export default async function PublicBookingPage(props: { params: Promise<{ slug:
         <p className="eyebrow">Reserva en línea</p>
         <h1 className="display mt-3 px-8 text-[34px] leading-[1.05] sm:text-[44px]">{organization.name}</h1>
         {organization.address && <p className="mt-3 text-[var(--ink-muted)]">{organization.address}</p>}
-        {organization.phone && <div className="mt-5"><WhatsappButton phone={organization.phone} message={whatsappMessage} variant="inline" /></div>}
       </div>
     </header>
 
@@ -53,6 +51,6 @@ export default async function PublicBookingPage(props: { params: Promise<{ slug:
     </div>
 
     <footer className="pb-28 pt-4 text-center text-[12px] text-[var(--ink-muted)]"><p>Reservas con <Link href="/" className="font-semibold text-[var(--accent)]">Growing Solutions</Link></p><SocialLinks className="mt-3" /></footer>
-    {organization.phone && <WhatsappButton phone={organization.phone} message={whatsappMessage} />}
+    {active && <AgentChat slug={organization.slug} businessName={organization.name} policyUrl={policyUrlFor(organization)} />}
   </main>;
 }

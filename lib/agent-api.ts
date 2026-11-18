@@ -29,7 +29,7 @@ export function apiJson(data: unknown, status = 200) {
 // - Permiso temporal "gsa." que la app emite por cada mensaje de WhatsApp (asistente multi-negocio).
 //   Va amarrado a un cliente: customerPhone viene del permiso y no se puede cambiar desde el agente.
 // - Llave fija del negocio (integraciones propias); ahí el teléfono lo envía quien llama.
-export async function authenticateAgent(request: Request): Promise<{ organization: Organization; customerPhone: string | null } | { response: NextResponse }> {
+export async function authenticateAgent(request: Request): Promise<{ organization: Organization; customerPhone: string | null; webSessionId: string | null } | { response: NextResponse }> {
   const header = request.headers.get("authorization") ?? "";
   const key = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
   if (!key) return { response: apiError("Falta la llave de API (Authorization: Bearer …).", 401) };
@@ -39,12 +39,12 @@ export async function authenticateAgent(request: Request): Promise<{ organizatio
     const organization = await prisma.organization.findUnique({ where: { id: grant.organizationId } });
     if (!organization) return { response: apiError("Negocio no encontrado.", 401) };
     if (!hasActiveAccess(organization)) return { response: apiError("El plan de este negocio está inactivo.", 403) };
-    return { organization, customerPhone: grant.customerPhone };
+    return { organization, customerPhone: grant.customerPhone, webSessionId: grant.webSessionId };
   }
   const organization = await prisma.organization.findUnique({ where: { agentApiKeyHash: hashApiKey(key) } });
   if (!organization) return { response: apiError("Llave de API inválida.", 401) };
   if (!hasActiveAccess(organization)) return { response: apiError("El plan de este negocio está inactivo.", 403) };
-  return { organization, customerPhone: null };
+  return { organization, customerPhone: null, webSessionId: null };
 }
 
 export function serializeBooking(booking: Booking & { service: Service }, timezone: string) {

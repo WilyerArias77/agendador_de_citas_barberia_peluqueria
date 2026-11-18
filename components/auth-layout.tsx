@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Logo } from "./logo";
 
 type Props = { eyebrow: string; heroTitle: string; children: React.ReactNode };
@@ -12,6 +13,7 @@ export function AuthLayout({ eyebrow, heroTitle, children }: Props) {
     </section>
     <section className="flex items-center justify-center bg-[var(--surface)] px-6 py-12">
       <div className="w-full max-w-md rounded-[10px] border border-[var(--line)] bg-[var(--surface-raised)] p-8 sm:p-10">
+        <Link href="/" className="mb-4 inline-block text-[13px] font-semibold text-[var(--ink-muted)] hover:text-[var(--accent)]">← Volver al inicio</Link>
         <Logo className="h-12 lg:hidden" />
         {children}
       </div>

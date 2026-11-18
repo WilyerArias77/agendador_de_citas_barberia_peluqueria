@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FinishButton } from "../../../../components/finish-button";
-import { WhatsappButton } from "../../../../components/whatsapp-button";
+import { AgentChat } from "../../../../components/agent-chat";
+import { policyUrlFor } from "../../../../lib/customers";
+import { hasActiveAccess } from "../../../../lib/organization";
 import { prisma } from "../../../../lib/prisma";
 import { formatLongDate, formatMoney, formatTime } from "../../../../lib/time";
 
@@ -28,14 +30,15 @@ export default async function BookingConfirmedPage(props: { params: Promise<{ sl
         <div className="flex justify-between gap-4"><dt className="text-[var(--ink-muted)]">Valor</dt><dd className="tabular text-right font-semibold text-[var(--accent)]">{formatMoney(booking.priceInCents, booking.service.currency)}</dd></div>
         {organization.address && <div className="flex justify-between gap-4"><dt className="text-[var(--ink-muted)]">Dirección</dt><dd className="text-right">{organization.address}</dd></div>}
       </dl>
-      <p className="mt-6 text-[13px] text-[var(--ink-muted)]">Guarda esta información. Si necesitas cambiar o cancelar tu cita, escríbele al negocio.</p>
+      <p className="mt-6 text-[13px] text-[var(--ink-muted)]">Guarda esta información. Si necesitas cambiar o cancelar tu cita, o tienes alguna duda, habla con nuestro Agente de citas (abajo a la derecha).</p>
       <div className="mt-6 flex flex-col gap-3">
-        {organization.phone && <WhatsappButton phone={organization.phone} variant="inline" label="Escribir al negocio" message={`Hola ${organization.name}, tengo una reserva de ${booking.service.name} el ${when} a nombre de ${booking.customerName}.`} />}
         <div className="flex gap-3">
           <Link href={`/b/${organization.slug}`} className="flex h-11 flex-1 items-center justify-center rounded-[10px] border border-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent)]">Hacer otra reserva</Link>
           <FinishButton businessName={organization.name} />
         </div>
+        <Link href={`/b/${organization.slug}`} className="text-sm font-semibold text-[var(--ink-muted)] hover:text-[var(--accent)]">← Volver al inicio</Link>
       </div>
     </div>
+    {hasActiveAccess(organization) && <AgentChat slug={organization.slug} businessName={organization.name} policyUrl={policyUrlFor(organization)} />}
   </main>;
 }

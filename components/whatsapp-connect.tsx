@@ -89,6 +89,7 @@ export function WhatsAppConnect({ appId, configId, graphVersion, label }: { appI
       FB.login((response) => {
         if (!response.authResponse?.code) {
           setStatus("idle");
+          setMessage({ type: "error", text: "No se completó la conexión con Meta. Si la ventana decía “La app no está activa”, la conexión con WhatsApp aún está en aprobación por parte de Meta: escríbenos a soporte y te avisamos cuando esté lista." });
           return;
         }
         code.current = response.authResponse.code;

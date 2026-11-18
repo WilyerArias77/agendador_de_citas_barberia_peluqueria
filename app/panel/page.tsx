@@ -2,12 +2,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CopyButton } from "../../components/copy-button";
 import { PageHeader, StatusBadge, cardClass } from "../../components/panel-ui";
+import { SetupGuide } from "../../components/setup-guide";
 import { publicBookingUrl, requireOrganization } from "../../lib/organization";
 import { prisma } from "../../lib/prisma";
 import { addDays, formatLongDate, formatMoney, formatTime, greeting, todayInZone, zonedToUtc } from "../../lib/time";
 
-export default async function PanelPage(props: { searchParams: Promise<{ nuevo?: string }> }) {
-  const searchParams = await props.searchParams;
+export default async function PanelPage() {
   const { session, organization, isOwner, barberId } = await requireOrganization();
   if (!isOwner) redirect("/panel/calendario");
   const tz = organization.timezone;
@@ -18,11 +18,16 @@ export default async function PanelPage(props: { searchParams: Promise<{ nuevo?:
   const monthStart = zonedToUtc(`${today.slice(0, 8)}01`, "00:00", tz);
   const weekEnd = zonedToUtc(addDays(today, 7), "00:00", tz);
 
-  const [todayBookings, monthRevenue, weekCount, serviceCount] = await Promise.all([
+  const [todayBookings, monthRevenue, weekCount, serviceCount, barbers, hours, customers, whatsapp, bookings] = await Promise.all([
     prisma.booking.findMany({ where: { organizationId: organization.id, ...mine, startsAt: { gte: dayStart, lt: dayEnd }, status: { not: "cancelled" } }, include: { service: true, barber: true }, orderBy: { startsAt: "asc" } }),
     prisma.booking.aggregate({ where: { organizationId: organization.id, ...mine, startsAt: { gte: monthStart, lt: dayEnd }, status: { in: ["confirmed", "completed"] } }, _sum: { priceInCents: true } }),
     prisma.booking.count({ where: { organizationId: organization.id, ...mine, startsAt: { gte: new Date(), lt: weekEnd }, status: "confirmed" } }),
-    prisma.service.count({ where: { organizationId: organization.id, active: true } })
+    prisma.service.count({ where: { organizationId: organization.id, active: true } }),
+    prisma.barber.count({ where: { organizationId: organization.id, active: true } }),
+    prisma.weeklyAvailability.count({ where: { organizationId: organization.id } }),
+    prisma.customer.count({ where: { organizationId: organization.id } }),
+    prisma.whatsAppConnection.count({ where: { organizationId: organization.id } }),
+    prisma.booking.count({ where: { organizationId: organization.id } })
   ]);
   const publicUrl = publicBookingUrl(organization.slug);
   const firstName = session.user.name.split(" ")[0];
@@ -31,7 +36,7 @@ export default async function PanelPage(props: { searchParams: Promise<{ nuevo?:
   return <main className="min-h-screen bg-[var(--surface-sunken)]">
     <PageHeader eyebrow={formatLongDate(new Date(), tz)} title={`${greeting(tz)}, ${firstName}.`} actions={<Link href="/panel/citas/nueva" className="flex h-10 items-center rounded-[10px] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)]">+ Nueva cita</Link>} />
     <div className="mx-auto max-w-[1440px] space-y-6 p-6 lg:p-8">
-      {searchParams.nuevo && <section className={`${cardClass} border-[var(--accent)] p-5`}><p className="eyebrow">¡Tu negocio está listo!</p><p className="mt-2 text-[15px]">Creamos un horario y 3 servicios de ejemplo. Ajústalos en <Link href="/panel/servicios" className="font-semibold text-[var(--accent)]">Servicios</Link> y <Link href="/panel/disponibilidad" className="font-semibold text-[var(--accent)]">Disponibilidad</Link>, y comparte tu página de reservas con tus clientes.</p></section>}
+      <SetupGuide progress={{ barbers, hours, services: serviceCount, customers, whatsapp, bookings }} />
 
       <section className="grid gap-4 sm:grid-cols-3">
         <div className={`${cardClass} p-5`}><p className="text-[13px] text-[var(--ink-muted)]">Citas de hoy</p><p className="tabular mt-3 text-[32px] font-semibold leading-9">{todayBookings.length}</p><p className="mt-2 text-[13px] text-[var(--ink-muted)]">{weekCount} por atender en los próximos 7 días</p></div>
@@ -47,7 +52,7 @@ export default async function PanelPage(props: { searchParams: Promise<{ nuevo?:
 
       <section className="grid gap-4 md:grid-cols-2">
         <div className={`${cardClass} p-5`}><p className="eyebrow">Tu página de reservas</p><h2 className="mt-1 text-[18px] font-semibold">Compártela con tus clientes</h2><p className="mt-3 break-all rounded border border-[var(--line)] bg-[var(--surface)] p-3 text-[13px]">{publicUrl}</p><div className="mt-4 flex flex-wrap gap-3"><CopyButton value={publicUrl} /><a href={publicUrl} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center rounded-[10px] border border-[var(--line)] px-4 text-sm font-semibold">Abrir página</a></div><p className="mt-3 text-[12px] text-[var(--ink-muted)]">Ponla en tu biografía de Instagram, en tu estado de WhatsApp o en Google Maps.</p></div>
-        <div className={`${cardClass} p-5`}><p className="eyebrow">Acciones rápidas</p><h2 className="mt-1 text-[18px] font-semibold">Mantén el control</h2><div className="mt-5 grid grid-cols-2 gap-3">{!isOwner && <Link href="/panel/clientes" className="rounded border border-[var(--line)] p-4 text-sm font-semibold hover:border-[var(--accent)]">Clientes<span className="mt-2 block text-[13px] font-normal text-[var(--ink-muted)]">Registrar clientes</span></Link>}{isOwner && <><Link href="/panel/servicios" className="rounded border border-[var(--line)] p-4 text-sm font-semibold hover:border-[var(--accent)]">Servicios<span className="mt-2 block text-[13px] font-normal text-[var(--ink-muted)]">Catálogo y tarifas</span></Link><Link href="/panel/disponibilidad" className="rounded border border-[var(--line)] p-4 text-sm font-semibold hover:border-[var(--accent)]">Bloquear horario<span className="mt-2 block text-[13px] font-normal text-[var(--ink-muted)]">Descansos y cierres</span></Link><Link href="/panel/negocio" className="rounded border border-[var(--line)] p-4 text-sm font-semibold hover:border-[var(--accent)]">WhatsApp<span className="mt-2 block text-[13px] font-normal text-[var(--ink-muted)]">{organization.phone ? "Número configurado" : "Agrega tu número"}</span></Link></>}<Link href="/panel/citas/nueva" className="rounded border border-[var(--line)] p-4 text-sm font-semibold hover:border-[var(--accent)]">Nueva cita<span className="mt-2 block text-[13px] font-normal text-[var(--ink-muted)]">Agenda por teléfono</span></Link></div></div>
+        <div className={`${cardClass} p-5`}><p className="eyebrow">Acciones rápidas</p><h2 className="mt-1 text-[18px] font-semibold">Mantén el control</h2><div className="mt-5 grid grid-cols-2 gap-3">{!isOwner && <Link href="/panel/clientes" className="rounded border border-[var(--line)] p-4 text-sm font-semibold hover:border-[var(--accent)]">Clientes<span className="mt-2 block text-[13px] font-normal text-[var(--ink-muted)]">Registrar clientes</span></Link>}{isOwner && <><Link href="/panel/servicios" className="rounded border border-[var(--line)] p-4 text-sm font-semibold hover:border-[var(--accent)]">Servicios<span className="mt-2 block text-[13px] font-normal text-[var(--ink-muted)]">Catálogo y tarifas</span></Link><Link href="/panel/disponibilidad" className="rounded border border-[var(--line)] p-4 text-sm font-semibold hover:border-[var(--accent)]">Bloquear horario<span className="mt-2 block text-[13px] font-normal text-[var(--ink-muted)]">Descansos y cierres</span></Link><Link href="/panel/whatsapp" className="rounded border border-[var(--line)] p-4 text-sm font-semibold hover:border-[var(--accent)]">Agente de citas<span className="mt-2 block text-[13px] font-normal text-[var(--ink-muted)]">{whatsapp ? "WhatsApp conectado" : "Conecta tu WhatsApp"}</span></Link></>}<Link href="/panel/citas/nueva" className="rounded border border-[var(--line)] p-4 text-sm font-semibold hover:border-[var(--accent)]">Nueva cita<span className="mt-2 block text-[13px] font-normal text-[var(--ink-muted)]">Agenda por teléfono</span></Link></div></div>
       </section>
     </div>
   </main>;

@@ -244,6 +244,8 @@ model Booking {
   endsAt         DateTime
   status         String       @default("confirmed")
   priceInCents   Int
+  // Reservas hechas desde el chat web del agente: solo esa sesión de chat puede verlas, cambiarlas o cancelarlas.
+  webSessionId   String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -252,6 +254,7 @@ model Booking {
   @@index([organizationId, startsAt])
   @@index([barberId])
   @@index([serviceId])
+  @@index([webSessionId])
 }
 
 model RateLimit {
@@ -295,11 +298,13 @@ model TrialFingerprint {
 }
 
 // Una conversación por cliente. Si el dueño responde desde su celular, el asistente se pausa unas horas.
+// El chat web del agente usa customerPhone = "web:<sesión>" y guarda el WhatsApp que deja el cliente en contactPhone.
 model WhatsAppConversation {
   id             String            @id @default(cuid())
   organizationId String
   customerPhone  String
   customerName   String            @default("")
+  contactPhone   String            @default("")
   botPausedUntil DateTime?
   lastMessageAt  DateTime          @default(now())
   createdAt      DateTime          @default(now())

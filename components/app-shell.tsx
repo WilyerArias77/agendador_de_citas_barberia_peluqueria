@@ -5,16 +5,17 @@ import { usePathname } from "next/navigation";
 import { Logo } from "./logo";
 import { SignOutButton } from "./sign-out-button";
 
+// Mismo orden que la guía de configuración del Inicio (pasos 3 a 8); luego el día a día.
 const navigation = [
   { href: "/panel", label: "Inicio", icon: "grid", ownerOnly: false },
   { href: "/panel/barberos", label: "Barberos", icon: "scissors", ownerOnly: true },
-  { href: "/panel/calendario", label: "Calendario", icon: "calendar", ownerOnly: false },
-  { href: "/panel/citas", label: "Citas", icon: "list", ownerOnly: false },
-  { href: "/panel/clientes", label: "Clientes", icon: "users", ownerOnly: false },
+  { href: "/panel/disponibilidad", label: "Horario", icon: "clock", ownerOnly: true },
   { href: "/panel/servicios", label: "Servicios y tarifas", icon: "tag", ownerOnly: true },
-  { href: "/panel/disponibilidad", label: "Disponibilidad", icon: "clock", ownerOnly: true },
-  { href: "/panel/negocio", label: "Mi negocio", icon: "store", ownerOnly: true },
-  { href: "/panel/whatsapp", label: "WhatsApp", icon: "chat", ownerOnly: true }
+  { href: "/panel/clientes", label: "Clientes", icon: "users", ownerOnly: false },
+  { href: "/panel/whatsapp", label: "Agente de citas", icon: "chat", ownerOnly: true },
+  { href: "/panel/citas", label: "Citas", icon: "list", ownerOnly: false },
+  { href: "/panel/calendario", label: "Calendario", icon: "calendar", ownerOnly: false },
+  { href: "/panel/negocio", label: "Mi negocio", icon: "store", ownerOnly: true }
 ] as const;
 
 function Icon({ name }: { name: string }) {

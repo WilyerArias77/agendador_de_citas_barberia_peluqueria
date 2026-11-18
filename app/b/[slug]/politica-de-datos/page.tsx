@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AgentChat } from "../../../../components/agent-chat";
+import { hasActiveAccess } from "../../../../lib/organization";
 import { prisma } from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +12,7 @@ export const dynamic = "force-dynamic";
 const VERSION_DATE = "2 de noviembre de 2026";
 
 async function getOrganization(slug: string) {
-  return prisma.organization.findUnique({ where: { slug }, select: { name: true, slug: true, address: true, phone: true } });
+  return prisma.organization.findUnique({ where: { slug }, select: { name: true, slug: true, address: true, phone: true, subscriptionStatus: true, trialEndsAt: true, currentPeriodEnd: true } });
 }
 
 export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -31,6 +33,7 @@ export default async function PrivacyPolicyPage(props: { params: Promise<{ slug:
   const contact = [organization.phone && `WhatsApp o teléfono ${organization.phone}`, organization.address && `en el establecimiento ubicado en ${organization.address}`].filter(Boolean).join(" o ") || "directamente en el establecimiento";
 
   return <main className="min-h-screen bg-[var(--surface-sunken)] px-4 py-10">
+    <div className="mx-auto mb-6 max-w-2xl"><Link href={`/b/${organization.slug}`} className="text-sm font-semibold text-[var(--accent)]">← Volver al inicio</Link></div>
     <article className="mx-auto max-w-2xl rounded-[10px] border border-[var(--line)] bg-[var(--surface-raised)] p-6 sm:p-10">
       <p className="eyebrow">Protección de datos personales</p>
       <h1 className="display mt-3 text-[32px] leading-[1.1] sm:text-[40px]">Política de Tratamiento de Datos Personales de {name}</h1>
@@ -87,7 +90,8 @@ export default async function PrivacyPolicyPage(props: { params: Promise<{ slug:
         <p>Cualquier cambio sustancial a esta política se publicará en esta misma página, indicando la nueva fecha de vigencia.</p>
       </Section>
 
-      <div className="mt-10 border-t border-[var(--line)] pt-6"><Link href={`/b/${organization.slug}`} className="text-sm font-semibold text-[var(--accent)]">← Volver a la página de reservas</Link></div>
+      <div className="mt-10 border-t border-[var(--line)] pt-6"><Link href={`/b/${organization.slug}`} className="text-sm font-semibold text-[var(--accent)]">← Volver al inicio</Link></div>
     </article>
+    {hasActiveAccess(organization) && <AgentChat slug={organization.slug} businessName={organization.name} policyUrl={`/b/${organization.slug}/politica-de-datos`} />}
   </main>;
 }

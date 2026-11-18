@@ -72,7 +72,7 @@ async function slotsFor({ organizationId, timezone, serviceId, date, ignoreLeadT
   return slots;
 }
 
-export type BookingInput = { organizationId: string; timezone: string; serviceId: string; barberId?: string; startsAt: string; customerName: string; customerPhone: string; customerEmail?: string; notes?: string; fromPanel?: boolean };
+export type BookingInput = { organizationId: string; timezone: string; serviceId: string; barberId?: string; startsAt: string; customerName: string; customerPhone: string; customerEmail?: string; notes?: string; fromPanel?: boolean; webSessionId?: string };
 export type BookingResult = { ok: true; bookingId: string } | { ok: false; error: string; status?: number };
 
 // Valida el horario y resuelve el barbero: el pedido, o el primero libre si no se eligió ninguno.
@@ -112,7 +112,7 @@ export async function createBooking(input: BookingInput): Promise<BookingResult>
       const endsAt = new Date(startsAt.getTime() + service.durationMinutes * 60_000);
       const overlapping = await tx.booking.count({ where: { organizationId: input.organizationId, ...busyFor(barberId), status: { not: "cancelled" }, startsAt: { lt: endsAt }, endsAt: { gt: startsAt } } });
       if (overlapping > 0) throw new Error("SLOT_TAKEN");
-      return tx.booking.create({ data: { organizationId: input.organizationId, serviceId: service.id, barberId, customerName, customerPhone, customerEmail: (input.customerEmail ?? "").trim().slice(0, 120), notes: (input.notes ?? "").trim().slice(0, 300), startsAt, endsAt, priceInCents: service.priceInCents } });
+      return tx.booking.create({ data: { organizationId: input.organizationId, serviceId: service.id, barberId, customerName, customerPhone, customerEmail: (input.customerEmail ?? "").trim().slice(0, 120), notes: (input.notes ?? "").trim().slice(0, 300), startsAt, endsAt, priceInCents: service.priceInCents, webSessionId: input.webSessionId ?? null } });
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     return { ok: true, bookingId: booking.id };
   } catch {

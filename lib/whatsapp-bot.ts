@@ -114,7 +114,7 @@ async function handleIncoming(phoneNumberId: string, message: WaMessage, custome
   const latest = await prisma.whatsAppMessage.findFirst({ where: { conversationId: conversation.id, direction: "in" }, orderBy: { createdAt: "desc" } });
   if (latest?.waMessageId !== message.id) return;
 
-  const answer = await askAgent(connection, conversation.id, message.from, customerName);
+  const answer = await callAgent({ organization: connection.organization, conversationId: conversation.id, customerPhone: message.from, customerName });
   const fresh = await prisma.whatsAppConversation.findUnique({ where: { id: conversation.id } });
   if (fresh?.botPausedUntil && fresh.botPausedUntil > new Date()) return;
   await reply(connection, token, conversation.id, message.from, answer);
@@ -132,8 +132,9 @@ async function handleOwnerEcho(phoneNumberId: string, echo: WaEcho) {
   await saveMessage(conversation.id, echo.id, "echo", echo.text?.body ?? `[${echo.type ?? "mensaje"}]`);
 }
 
-async function askAgent(connection: ConnectionWithOrg, conversationId: string, customerPhone: string, customerName: string) {
-  const organization = connection.organization;
+// Llama al agente de n8n (el "cerebro") con el contexto del negocio y la conversación. Lo usan WhatsApp y el chat web.
+// instruction: mensaje que reemplaza al del cliente (p. ej. el saludo inicial del chat web).
+export async function callAgent({ organization, conversationId, customerPhone, customerName, webSessionId, instruction }: { organization: Organization; conversationId: string; customerPhone: string; customerName: string; webSessionId?: string; instruction?: string }) {
   const bookingUrl = publicBookingUrl(organization.slug);
   const fallback = `¡Hola! 💈 En este momento no puedo responderte por aquí. Puedes reservar tu cita en ${bookingUrl}${organization.phone ? ` o escribirnos al ${organization.phone}` : ""}.`;
   const url = process.env.N8N_AGENT_WEBHOOK_URL;
@@ -157,7 +158,7 @@ async function askAgent(connection: ConnectionWithOrg, conversationId: string, c
         message: pending,
         history,
         apiBaseUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/agent`,
-        agentToken: issueAgentToken(organization.id, customerPhone)
+        agentToken: issueAgentToken(organization.id, customerPhone, webSessionId)
       }),
       signal: AbortSignal.timeout(55_000),
       cache: "no-store"

@@ -5,9 +5,11 @@ import { prisma } from "../../../../../lib/prisma";
 export const dynamic = "force-dynamic";
 
 // El cliente solo puede tocar sus propias citas futuras: el teléfono debe coincidir con el de la reserva.
-async function findOwnedBooking(organizationId: string, id: string, phone: string) {
+// En el chat web, además, la reserva debe haberse creado en esa misma sesión de chat.
+async function findOwnedBooking(organizationId: string, id: string, phone: string, webSessionId: string | null) {
   const booking = await prisma.booking.findFirst({ where: { id, organizationId } });
-  return booking && phonesMatch(booking.customerPhone, phone) ? booking : null;
+  if (!booking || !phonesMatch(booking.customerPhone, phone)) return null;
+  return webSessionId && booking.webSessionId !== webSessionId ? null : booking;
 }
 
 function pastBookingError(booking: { startsAt: Date }) {
@@ -21,7 +23,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
   const { organization } = auth;
   const body = await readJson(request);
   if (!body) return apiError("El cuerpo debe ser JSON.", 400);
-  const owned = await findOwnedBooking(organization.id, params.id, auth.customerPhone ?? String(body.customerPhone ?? ""));
+  const owned = await findOwnedBooking(organization.id, params.id, auth.customerPhone ?? String(body.customerPhone ?? ""), auth.webSessionId);
   if (!owned) return apiError("No encontramos una cita con ese código para este teléfono.", 404);
   const past = pastBookingError(owned);
   if (past) return past;
@@ -36,7 +38,7 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
   const auth = await authenticateAgent(request);
   if ("response" in auth) return auth.response;
   const phone = auth.customerPhone ?? new URL(request.url).searchParams.get("phone") ?? "";
-  const owned = await findOwnedBooking(auth.organization.id, params.id, phone);
+  const owned = await findOwnedBooking(auth.organization.id, params.id, phone, auth.webSessionId);
   if (!owned) return apiError("No encontramos una cita con ese código para este teléfono.", 404);
   const past = pastBookingError(owned);
   if (past) return past;

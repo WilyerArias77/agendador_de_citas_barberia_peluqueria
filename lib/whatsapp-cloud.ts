@@ -51,16 +51,17 @@ function safeEqual(a: string, b: string) {
 
 // ---------- Permiso temporal para el agente (n8n) ----------
 // Formato: gsa.<datos>.<firma>. Vale 15 minutos, para un negocio y un cliente.
+// En el chat web se agrega la sesión (s): ese permiso solo ve y cambia las reservas creadas en esa sesión.
 
 const AGENT_TOKEN_TTL_SECONDS = 15 * 60;
 
-export function issueAgentToken(organizationId: string, customerPhone: string) {
-  const payload = Buffer.from(JSON.stringify({ o: organizationId, p: customerPhone, e: Math.floor(Date.now() / 1000) + AGENT_TOKEN_TTL_SECONDS })).toString("base64url");
+export function issueAgentToken(organizationId: string, customerPhone: string, webSessionId?: string) {
+  const payload = Buffer.from(JSON.stringify({ o: organizationId, p: customerPhone, e: Math.floor(Date.now() / 1000) + AGENT_TOKEN_TTL_SECONDS, ...(webSessionId ? { s: webSessionId } : {}) })).toString("base64url");
   const signature = createHmac("sha256", masterKey("agent-token")).update(payload).digest("base64url");
   return `gsa.${payload}.${signature}`;
 }
 
-export function verifyAgentToken(token: string): { organizationId: string; customerPhone: string } | null {
+export function verifyAgentToken(token: string): { organizationId: string; customerPhone: string; webSessionId: string | null } | null {
   const [prefix, payload, signature] = token.split(".");
   if (prefix !== "gsa" || !payload || !signature) return null;
   let expected: string;
@@ -71,9 +72,9 @@ export function verifyAgentToken(token: string): { organizationId: string; custo
   }
   if (!safeEqual(signature, expected)) return null;
   try {
-    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { o?: string; p?: string; e?: number };
+    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { o?: string; p?: string; e?: number; s?: string };
     if (!data.o || !data.p || !data.e || data.e < Date.now() / 1000) return null;
-    return { organizationId: data.o, customerPhone: data.p };
+    return { organizationId: data.o, customerPhone: data.p, webSessionId: data.s ?? null };
   } catch {
     return null;
   }
