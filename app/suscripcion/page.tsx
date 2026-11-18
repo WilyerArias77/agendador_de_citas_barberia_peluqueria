@@ -5,11 +5,10 @@ import { AuthLayout, authInputClass } from "../../components/auth-layout";
 import { CopyButton } from "../../components/copy-button";
 import { SignOutButton } from "../../components/sign-out-button";
 import { WhatsappButton } from "../../components/whatsapp-button";
-import { MONTHLY_PER_BARBER_IN_CENTS, NEQUI_NUMBER, PLAN_NAME, PLAN_TIERS, amountDue, supportWhatsapp } from "../../lib/billing";
+import { APPROVAL_CODE_DAYS, MONTHLY_PER_BARBER_IN_CENTS, NEQUI_NUMBER, PLAN_NAME, PLAN_TIERS, amountDue, formatColombianPhone, supportWhatsapp } from "../../lib/billing";
 import { hasActiveAccess, requireOrganization, trialDaysLeft } from "../../lib/organization";
-import { prisma } from "../../lib/prisma";
 import { formatLongDate, formatMoney } from "../../lib/time";
-import { reportPayment } from "./actions";
+import { redeemApprovalCode } from "./actions";
 
 export const metadata = { title: "Activa tu plan" };
 
@@ -19,7 +18,6 @@ export default async function SubscriptionPage(props: { searchParams: Promise<{ 
   if (!isOwner) redirect("/panel");
   const active = hasActiveAccess(organization);
   const daysLeft = trialDaysLeft(organization);
-  const pending = await prisma.paymentReport.findFirst({ where: { organizationId: organization.id, status: "pending" }, orderBy: { createdAt: "desc" } });
   const due = await amountDue(organization);
   const price = formatMoney(due.totalInCents);
   const perBarber = formatMoney(MONTHLY_PER_BARBER_IN_CENTS);
@@ -55,19 +53,22 @@ export default async function SubscriptionPage(props: { searchParams: Promise<{ 
       <p className="mt-2 text-[12px] text-[var(--ink-muted)]">Se cuentan los barberos activos en tu panel (mínimo 1).</p>
     </div>
 
-    <ol className="mt-6 space-y-4 text-sm">
-      <li><p className="font-semibold">1. Transfiere {price} a Nequi</p>
+    <h3 className="mt-8 font-semibold">Para realizar el pago y poder usar la aplicación sigue estos pasos:</h3>
+    <ol className="mt-4 space-y-5 text-sm">
+      <li><p className="font-semibold">1. Transfiere {price} a la cuenta Nequi</p>
         <div className="mt-2 flex flex-wrap items-center gap-3 rounded-[10px] border border-[var(--line)] bg-[var(--surface)] p-3"><span className="tabular text-[20px] font-semibold tracking-[.04em]">{NEQUI_NUMBER}</span><CopyButton value={NEQUI_NUMBER} label="Copiar número" /></div></li>
       <li><p className="font-semibold">2. Reporta tu pago</p>
-        {pending ? <p role="status" className="mt-2 rounded border border-[var(--accent)] bg-[var(--accent-soft)] p-3 text-[13px]">Tu pago (referencia {pending.reference}) está en revisión. Te avisaremos cuando lo confirmemos.</p>
-          : <ActionForm action={reportPayment} submitLabel="Reportar pago" pendingLabel="Enviando…" submitClassName="h-11 w-full rounded-[10px] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)]">
-            <label className="mt-2 block text-sm font-medium">Nombre de quien transfirió<input name="payerName" required minLength={2} maxLength={80} placeholder="Como aparece en Nequi" className={authInputClass} /></label>
-            <label className="mt-4 block text-sm font-medium">Referencia de la transferencia<input name="reference" required minLength={4} maxLength={60} placeholder="Ej. M1234567" className={authInputClass} /></label>
-          </ActionForm>}</li>
-      <li><p className="font-semibold">3. Envíanos el comprobante</p>
-        <div className="mt-2"><WhatsappButton phone={supportWhatsapp()} variant="inline" label="Enviar comprobante por WhatsApp" message={`Hola, pagué el ${PLAN_NAME} (${price}${due.setupInCents > 0 ? ", incluye instalación" : ""}) de ${organization.name} (${organization.slug}). Adjunto el comprobante.`} /></div></li>
+        <p className="mt-1 text-[13px] text-[var(--ink-muted)]">Escribe al WhatsApp <span className="font-semibold text-[var(--ink)]">{formatColombianPhone(supportWhatsapp())}</span> y envía la captura de pantalla de la transacción.</p>
+        <div className="mt-2"><WhatsappButton phone={supportWhatsapp()} variant="inline" label="Reportar mi pago por WhatsApp" message={`Hola, pagué el ${PLAN_NAME} (${price}${due.setupInCents > 0 ? ", incluye instalación" : ""}) de ${organization.name} (${organization.slug}). Adjunto la captura de la transacción.`} /></div></li>
+      <li><p className="font-semibold">3. Espera tu código de aprobación</p>
+        <p className="mt-1 text-[13px] text-[var(--ink-muted)]">Cuando confirmemos la transferencia te enviaremos por WhatsApp un código de 5 dígitos (vence en {APPROVAL_CODE_DAYS} días).</p></li>
+      <li><p className="font-semibold">4. Ingresa el código aquí</p>
+        <ActionForm action={redeemApprovalCode} submitLabel="Activar mi plan" pendingLabel="Validando…" submitClassName="h-11 w-full rounded-[10px] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)]">
+          <label className="mt-2 block text-sm font-medium">Código de aprobación<input name="code" required inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{5}" maxLength={5} placeholder="12345" className={`${authInputClass} tabular text-center text-[22px] tracking-[.5em]`} /></label>
+        </ActionForm></li>
+      <li><p className="font-semibold">5. ¡Bienvenido!</p>
+        <p className="mt-1 text-[13px] text-[var(--ink-muted)]">Con el código validado tu plan queda activo y de ahora en adelante puedes usar la aplicación.</p></li>
     </ol>
-    <p className="mt-4 text-[12px] text-[var(--ink-muted)]">Activamos tu plan apenas confirmemos la transferencia.</p>
 
     <div className="mt-8 flex flex-col gap-3 border-t border-[var(--line)] pt-6">
       {active ? <Link href="/panel" className="flex h-11 items-center justify-center rounded-[10px] border border-[var(--line)] px-4 text-sm font-semibold">← Volver al panel</Link>

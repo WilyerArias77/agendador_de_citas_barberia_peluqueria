@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { TRIAL_DAYS, getUserOrganization, requireSession, uniqueSlug } from "../../lib/organization";
 import { prisma } from "../../lib/prisma";
+import { trialNumberUsedElsewhere } from "../../lib/whatsapp-access";
 
 export type OnboardingState = { error?: string };
 
@@ -21,10 +22,12 @@ const STARTER_SERVICES = [
 const lastDigits = (value: string) => value.replace(/\D/g, "").slice(-10);
 const normalized = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-// La prueba gratis es una sola por negocio: se reconoce por el WhatsApp o por el mismo nombre y dirección.
+// La prueba gratis es una sola por negocio: se reconoce por el WhatsApp (del negocio o ya conectado al asistente en otra prueba)
+// o por el mismo nombre y dirección.
 async function trialAlreadyUsed(phone: string, name: string, address: string) {
   const phoneKey = lastDigits(phone);
   const nameKey = normalized(name), addressKey = normalized(address);
+  if (await trialNumberUsedElsewhere(phone)) return true;
   const others = await prisma.organization.findMany({ select: { phone: true, name: true, address: true } });
   return others.some((org) => (phoneKey.length >= 7 && lastDigits(org.phone) === phoneKey) || (addressKey.length > 0 && normalized(org.address) === addressKey && normalized(org.name) === nameKey));
 }

@@ -2,6 +2,7 @@ import { Prisma, type Organization, type WhatsAppConnection } from "@prisma/clie
 import { hasActiveAccess, publicBookingUrl } from "./organization";
 import { prisma } from "./prisma";
 import { isRateLimited } from "./rate-limit";
+import { removeConnection, trialExpired } from "./whatsapp-access";
 import { todayInZone } from "./time";
 import { GraphError, HUMAN_TAKEOVER_HOURS, decryptSecret, issueAgentToken, markReadWithTyping, sendText } from "./whatsapp-cloud";
 
@@ -78,6 +79,11 @@ async function saveMessage(conversationId: string, waMessageId: string, directio
 async function handleIncoming(phoneNumberId: string, message: WaMessage, customerName: string) {
   const connection = await findConnection(phoneNumberId);
   if (!connection || connection.status === "disconnected") return;
+  // La prueba gratis terminó sin pagar: el número se desconecta de la plataforma (además de la tarea diaria).
+  if (trialExpired(connection.organization)) {
+    await removeConnection(connection);
+    return;
+  }
   const sentAt = Number(message.timestamp ?? 0) * 1000;
   if (sentAt && Date.now() - sentAt > MAX_MESSAGE_AGE_MS) return;
 

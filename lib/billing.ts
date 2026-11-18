@@ -1,7 +1,8 @@
 import type { Organization } from "@prisma/client";
 import { prisma } from "./prisma";
 
-// Suscripción por transferencia: el negocio paga a Nequi, reporta el pago y el administrador lo aprueba.
+// Suscripción por transferencia: el negocio paga a Nequi y envía la captura por WhatsApp; el dueño de la plataforma
+// confirma el pago y le entrega un código de aprobación de 5 dígitos que el negocio ingresa en /suscripcion.
 // Tarifa: pago único de instalación según el número de barberos + mensualidad por barbero.
 
 export const PLAN_NAME = "Plan Profesional";
@@ -53,4 +54,19 @@ export function nextPeriodEnd(org: Pick<Organization, "trialEndsAt" | "currentPe
   const end = new Date(start);
   end.setUTCMonth(end.getUTCMonth() + 1);
   return end;
+}
+
+// Los códigos de aprobación vencen a los 7 días si no se usan.
+export const APPROVAL_CODE_DAYS = 7;
+
+// Suma un mes pagado (y marca la instalación como pagada si ese pago la incluía).
+export async function activateOneMonth(organizationId: string, setupPaid = false) {
+  const organization = await prisma.organization.findUniqueOrThrow({ where: { id: organizationId } });
+  await prisma.organization.update({ where: { id: organizationId }, data: { subscriptionStatus: "active", currentPeriodEnd: nextPeriodEnd(organization), ...(setupPaid && !organization.setupPaidAt ? { setupPaidAt: new Date() } : {}) } });
+}
+
+// "+57 300 128 4662" para mostrar el número de soporte.
+export function formatColombianPhone(phone: string) {
+  const digits = phone.replace(/\D/g, "").slice(-10);
+  return digits.length === 10 ? `+57 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}` : phone;
 }

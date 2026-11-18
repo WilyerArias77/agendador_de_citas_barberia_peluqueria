@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { connectWhatsApp } from "../app/panel/whatsapp-actions";
 
-// Registro integrado de Meta (Embedded Signup): el dueño entra con Facebook, elige o crea su cuenta
-// de WhatsApp Business y, si ya usa la app WhatsApp Business, escanea un QR para conectarla (coexistencia).
+// Registro integrado de Meta (Embedded Signup): el dueño entra con Facebook, elige su cuenta de WhatsApp Business
+// y escanea un QR desde la app WhatsApp Business para conectarla (coexistencia). Meta también le deja usar un número nuevo:
+// el evento final dice cuál de los dos caminos tomó.
 
 type FacebookSdk = {
   init: (options: Record<string, unknown>) => void;
@@ -15,7 +16,7 @@ declare global {
 }
 
 type Mode = "coexistence" | "cloud";
-type Session = { wabaId: string; phoneNumberId: string };
+type Session = { wabaId: string; phoneNumberId?: string; mode: Mode };
 
 function loadSdk(appId: string, graphVersion: string) {
   return new Promise<FacebookSdk>((resolve, reject) => {
@@ -34,18 +35,15 @@ function loadSdk(appId: string, graphVersion: string) {
   });
 }
 
-export function WhatsAppConnect({ appId, configId, graphVersion }: { appId: string; configId: string; graphVersion: string }) {
-  const [mode, setMode] = useState<Mode>("coexistence");
+export function WhatsAppConnect({ appId, configId, graphVersion, label }: { appId: string; configId: string; graphVersion: string; label: string }) {
   const [status, setStatus] = useState<"idle" | "waiting" | "saving">("idle");
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const code = useRef<string | null>(null);
   const session = useRef<Session | null>(null);
-  const modeRef = useRef<Mode>(mode);
-  modeRef.current = mode;
 
   async function finish() {
     if (!code.current || !session.current) return;
-    const payload = { code: code.current, ...session.current, mode: modeRef.current };
+    const payload = { code: code.current, ...session.current };
     code.current = null;
     session.current = null;
     setStatus("saving");
@@ -74,8 +72,8 @@ export function WhatsAppConnect({ appId, configId, graphVersion }: { appId: stri
         setMessage({ type: "error", text: data.data?.error_message ?? "Meta reportó un error durante la conexión." });
         return;
       }
-      if (data.data?.phone_number_id && data.data?.waba_id) {
-        session.current = { wabaId: data.data.waba_id, phoneNumberId: data.data.phone_number_id };
+      if (data.event?.startsWith("FINISH") && data.data?.waba_id) {
+        session.current = { wabaId: data.data.waba_id, phoneNumberId: data.data.phone_number_id, mode: data.event === "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING" ? "coexistence" : "cloud" };
         void finish();
       }
     }
@@ -99,7 +97,7 @@ export function WhatsAppConnect({ appId, configId, graphVersion }: { appId: stri
         config_id: configId,
         response_type: "code",
         override_default_response_type: true,
-        extras: { setup: {}, sessionInfoVersion: "3", ...(modeRef.current === "coexistence" ? { featureType: "whatsapp_business_app_onboarding" } : {}) }
+        extras: { setup: {}, sessionInfoVersion: "3", featureType: "whatsapp_business_app_onboarding" }
       });
     } catch (error) {
       setStatus("idle");
@@ -107,16 +105,9 @@ export function WhatsAppConnect({ appId, configId, graphVersion }: { appId: stri
     }
   }
 
-  const option = (value: Mode, title: string, hint: string) => <label className={`flex cursor-pointer gap-3 rounded-[10px] border p-3 ${mode === value ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--line)]"}`}>
-    <input type="radio" name="wa-mode" checked={mode === value} onChange={() => setMode(value)} className="mt-1" />
-    <span><span className="block text-sm font-semibold">{title}</span><span className="block text-[12px] text-[var(--ink-muted)]">{hint}</span></span>
-  </label>;
-
   return <div className="mt-4 space-y-3">
-    {option("coexistence", "Ya uso WhatsApp Business en mi celular (recomendado)", "Conservas tu número, tus chats y la app. Meta te pedirá escanear un código QR desde WhatsApp Business.")}
-    {option("cloud", "Quiero usar un número nuevo solo para el asistente", "El número no debe estar en ninguna app de WhatsApp. Recibirás un código por SMS o llamada.")}
-    <button type="button" onClick={start} disabled={status !== "idle"} className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-[#25D366] px-5 text-sm font-semibold text-[#0b3d1f] disabled:opacity-60">
-      {status === "waiting" ? "Siguiendo los pasos en Meta…" : status === "saving" ? "Conectando…" : "Conectar mi WhatsApp"}
+    <button type="button" onClick={start} disabled={status !== "idle"} className="inline-flex min-h-11 items-center gap-2 rounded-[10px] bg-[#25D366] px-5 py-2 text-left text-sm font-semibold text-[#0b3d1f] disabled:opacity-60">
+      {status === "waiting" ? "Siguiendo los pasos en Meta…" : status === "saving" ? "Conectando…" : label}
     </button>
     {message && <p role={message.type === "error" ? "alert" : "status"} className={`rounded border p-3 text-sm ${message.type === "error" ? "border-[var(--danger)]/40 bg-[var(--danger)]/10 text-[var(--danger)]" : "border-[var(--success)]/40 bg-[var(--success)]/10 text-[var(--success)]"}`}>{message.text}</p>}
   </div>;

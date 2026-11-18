@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { InlineAction } from "../../../components/action-form";
 import { PageHeader, cardClass } from "../../../components/panel-ui";
@@ -26,7 +27,7 @@ export default async function AdminWhatsAppPage() {
   const stat = (label: string, value: string | number, alert = false) => <div className={`${cardClass} p-4`}><p className="text-[12px] text-[var(--ink-muted)]">{label}</p><p className={`tabular mt-1 text-[24px] font-semibold ${alert ? "text-[var(--danger)]" : ""}`}>{value}</p></div>;
 
   return <main className="min-h-screen bg-[var(--surface-sunken)]">
-    <PageHeader eyebrow="Administración" title="WhatsApp de los negocios" />
+    <PageHeader eyebrow="Plataforma" title="WhatsApp de los negocios" actions={<Link href="/panel" className="inline-flex h-10 items-center rounded-[10px] border border-[var(--line)] px-4 text-sm font-semibold">← Volver al menú principal</Link>} />
     <div className="mx-auto max-w-[1100px] space-y-6 p-6 lg:p-8">
       {!isWhatsAppPlatformReady() && <p role="alert" className="rounded border border-[var(--danger)]/40 bg-[var(--danger)]/10 p-3 text-sm text-[var(--danger)]">Faltan variables de entorno de WhatsApp en Vercel (META_APP_SECRET, NEXT_PUBLIC_META_APP_ID, WHATSAPP_ENCRYPTION_KEY, N8N_AGENT_WEBHOOK_URL o N8N_SHARED_SECRET).</p>}
       <div className="grid gap-4 sm:grid-cols-4">

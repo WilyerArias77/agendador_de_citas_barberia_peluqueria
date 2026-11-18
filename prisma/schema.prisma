@@ -106,7 +106,7 @@ model Organization {
   customers     Customer[]
   payments      PaymentReport[]
   expenses      Expense[]
-  whatsapp      WhatsAppConnection?
+  whatsappConnections WhatsAppConnection[]
   conversations WhatsAppConversation[]
   @@index([ownerId])
 }
@@ -171,7 +171,8 @@ model Customer {
   @@unique([organizationId, phone])
 }
 
-// Pagos de la suscripción por transferencia (Nequi): el negocio reporta y el administrador aprueba.
+// Pagos de la suscripción por transferencia (Nequi). El administrador confirma el pago por WhatsApp y genera
+// un código de aprobación de 5 dígitos (status "code_sent"); el negocio lo ingresa y se activa el plan ("approved").
 model PaymentReport {
   id             String       @id @default(cuid())
   organizationId String
@@ -181,6 +182,8 @@ model PaymentReport {
   reference      String
   payerName      String
   status         String       @default("pending")
+  approvalCode   String?
+  codeExpiresAt  DateTime?
   reviewedAt     DateTime?
   createdAt      DateTime     @default(now())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -262,7 +265,7 @@ model RateLimit {
 // Meta envía los mensajes de todos los negocios a un solo webhook; se enruta por phoneNumberId.
 model WhatsAppConnection {
   id             String       @id @default(cuid())
-  organizationId String       @unique
+  organizationId String
   wabaId         String
   phoneNumberId  String       @unique
   displayPhone   String       @default("")
@@ -277,6 +280,18 @@ model WhatsAppConnection {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  @@index([organizationId])
+}
+
+// Huellas de la prueba gratis (p. ej. números de WhatsApp ya conectados en una prueba):
+// sobreviven aunque se desconecte el número o se borre el negocio, para que la prueba sea una sola vez.
+model TrialFingerprint {
+  id             String   @id @default(cuid())
+  kind           String
+  value          String
+  organizationId String
+  createdAt      DateTime @default(now())
+  @@unique([kind, value])
 }
 
 // Una conversación por cliente. Si el dueño responde desde su celular, el asistente se pausa unas horas.

@@ -129,13 +129,20 @@ export async function exchangeSignupCode(code: string) {
   return data.access_token;
 }
 
+type PhoneInfo = { id: string; display_phone_number?: string; verified_name?: string; status?: string };
+
 export async function getPhoneNumber(phoneNumberId: string, token: string) {
-  return graph<{ id: string; display_phone_number?: string; verified_name?: string }>(phoneNumberId, { token, query: { fields: "id,display_phone_number,verified_name" } });
+  return graph<PhoneInfo>(phoneNumberId, { token, query: { fields: "id,display_phone_number,verified_name,status" } });
+}
+
+// Números de la cuenta de WhatsApp Business (WABA) a los que el token tiene acceso.
+export async function listWabaPhones(wabaId: string, token: string) {
+  const data = await graph<{ data?: PhoneInfo[] }>(`${wabaId}/phone_numbers`, { token, query: { fields: "id,display_phone_number,verified_name,status", limit: "100" } });
+  return data.data ?? [];
 }
 
 export async function wabaOwnsPhone(wabaId: string, phoneNumberId: string, token: string) {
-  const data = await graph<{ data?: { id: string }[] }>(`${wabaId}/phone_numbers`, { token, query: { fields: "id", limit: "100" } });
-  return (data.data ?? []).some((phone) => phone.id === phoneNumberId);
+  return (await listWabaPhones(wabaId, token)).some((phone) => phone.id === phoneNumberId);
 }
 
 export async function subscribeAppToWaba(wabaId: string, token: string) {
