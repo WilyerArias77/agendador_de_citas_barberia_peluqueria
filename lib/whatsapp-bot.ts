@@ -41,6 +41,8 @@ export async function handleWebhookPayload(payload: WebhookPayload) {
     for (const change of entry.changes ?? []) {
       const value = change.value;
       const phoneNumberId = value?.metadata?.phone_number_id;
+      // Diagnóstico sin datos personales: qué tipo de aviso llegó y para qué número.
+      console.log(`[whatsapp] webhook field=${change.field} phone=${phoneNumberId ?? "-"} messages=${value?.messages?.length ?? 0} echoes=${value?.message_echoes?.length ?? 0}`);
       if (!value || !phoneNumberId) continue;
       if (change.field === "messages") {
         for (const message of value.messages ?? []) {
@@ -78,7 +80,10 @@ async function saveMessage(conversationId: string, waMessageId: string, directio
 
 async function handleIncoming(phoneNumberId: string, message: WaMessage, customerName: string) {
   const connection = await findConnection(phoneNumberId);
-  if (!connection || connection.status === "disconnected") return;
+  if (!connection || connection.status === "disconnected") {
+    console.log(`[whatsapp] mensaje ignorado: número ${phoneNumberId} ${connection ? "desconectado" : "no registrado en la plataforma"}`);
+    return;
+  }
   // La prueba gratis terminó sin pagar: el número se desconecta de la plataforma (además de la tarea diaria).
   if (trialExpired(connection.organization)) {
     await removeConnection(connection);
