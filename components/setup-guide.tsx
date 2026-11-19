@@ -6,7 +6,7 @@ import { cardClass } from "./panel-ui";
 export type SetupProgress = { barbers: number; hours: number; services: number; customers: number; whatsapp: number; bookings: number };
 
 export function SetupGuide({ progress }: { progress: SetupProgress }) {
-  const steps: { title: string; text: string; done: boolean; href?: Route; cta?: string }[] = [
+  const checks: { title: string; text: string; done: boolean; href?: Route; cta?: string }[] = [
     { title: "Crea tu cuenta", text: "Registraste tu nombre, correo y contraseña. Tu perfil quedó como Administrador.", done: true },
     { title: "Confirma tu correo", text: "Abriste el enlace que te enviamos por correo.", done: true },
     { title: "Crea a tus barberos", text: "Agrega a cada barbero. Si tú también atiendes, regístrate como barbero.", done: progress.barbers > 0, href: "/panel/barberos", cta: "Ir a Barberos" },
@@ -16,6 +16,9 @@ export function SetupGuide({ progress }: { progress: SetupProgress }) {
     { title: "Configura tu Agente de citas", text: "Conecta tu número de WhatsApp Business para que el agente atienda a tus clientes.", done: progress.whatsapp > 0, href: "/panel/whatsapp", cta: "Ir a Agente de citas" },
     { title: "Registra las reservas que ya tienes", text: "Pasa a la agenda las citas que ya tenías apartadas.", done: progress.bookings > 0, href: "/panel/citas/nueva", cta: "Nueva cita" }
   ];
+  // Los pasos se completan en orden: uno solo queda con ✓ si todos los anteriores también lo están.
+  const firstPending = checks.findIndex((step) => !step.done);
+  const steps = checks.map((step, index) => ({ ...step, done: firstPending === -1 || index < firstPending }));
   const done = steps.filter((step) => step.done).length;
   const next = steps.findIndex((step) => !step.done);
 
@@ -25,7 +28,7 @@ export function SetupGuide({ progress }: { progress: SetupProgress }) {
       <span className="tabular rounded-full border border-[var(--line)] px-3 py-1 text-[13px] text-[var(--ink-muted)]">{done}/{steps.length} completos</span>
     </summary>
     <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--surface)]"><div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${(done / steps.length) * 100}%` }} /></div>
-    <ol className="mt-5 grid gap-3 md:grid-cols-2">{steps.map((step, index) => <li key={step.title} className={`flex gap-3 rounded-[10px] border p-4 ${index === next ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--line)]"}`}>
+    <ol className="mt-5 grid gap-3">{steps.map((step, index) => <li key={step.title} className={`flex gap-3 rounded-[10px] border p-4 ${index === next ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--line)]"}`}>
       <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${step.done ? "bg-[var(--success)]/20 text-[var(--success)]" : "bg-[var(--surface)] text-[var(--ink-muted)]"}`}>{step.done ? "✓" : index + 1}</span>
       <div className="min-w-0">
         <p className="text-[12px] font-semibold uppercase tracking-[.06em] text-[var(--ink-muted)]">Paso {index + 1}</p>
