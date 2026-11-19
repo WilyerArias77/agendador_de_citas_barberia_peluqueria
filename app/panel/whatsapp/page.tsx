@@ -2,13 +2,13 @@ import Link from "next/link";
 import { InlineAction } from "../../../components/action-form";
 import { PageHeader, cardClass } from "../../../components/panel-ui";
 import { WhatsAppConnect } from "../../../components/whatsapp-connect";
-import { isVerifiedPlatformAdmin } from "../../../lib/billing";
 import { requireOwnerOrganization, trialDaysLeft } from "../../../lib/organization";
 import { prisma } from "../../../lib/prisma";
 import { formatLongDate, formatTime } from "../../../lib/time";
 import { isPaidPlan, whatsappNumberLimit } from "../../../lib/whatsapp-access";
 import { HUMAN_TAKEOVER_HOURS, whatsappEmbeddedSignupConfig } from "../../../lib/whatsapp-cloud";
 import { disconnectWhatsApp, resumeAllConversations, setWhatsAppAgentEnabled } from "../whatsapp-actions";
+import { SetupStepFooter } from "../../../components/setup-step-footer";
 
 export const metadata = { title: "Agente de citas" };
 
@@ -16,13 +16,13 @@ const CONNECT_LABEL = "Conectar tu número de WhatsApp Business al “Asistente 
 
 // Solo el dueño (administrador del negocio) conecta y administra los números de WhatsApp de su barbería.
 export default async function WhatsAppPage() {
-  const { organization, session } = await requireOwnerOrganization();
+  const { organization } = await requireOwnerOrganization();
   const [connections, pausedChats] = await Promise.all([
     prisma.whatsAppConnection.findMany({ where: { organizationId: organization.id }, orderBy: { createdAt: "asc" } }),
     prisma.whatsAppConversation.count({ where: { organizationId: organization.id, botPausedUntil: { gt: new Date() } } })
   ]);
   const paid = isPaidPlan(organization);
-  const limit = whatsappNumberLimit(organization, isVerifiedPlatformAdmin(session.user));
+  const limit = whatsappNumberLimit(organization);
   const daysLeft = trialDaysLeft(organization);
   const signup = whatsappEmbeddedSignupConfig();
   const tz = organization.timezone;
@@ -63,6 +63,7 @@ export default async function WhatsAppPage() {
             : <p className="text-[13px]">La conexión automática con WhatsApp se está habilitando. Escríbenos a soporte y te ayudamos a conectarlo.</p>}
         </div>
       </section>
+      <SetupStepFooter step="agente" completed={organization.setupCompleted} />
     </div>
   </main>;
 }

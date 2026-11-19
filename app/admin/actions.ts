@@ -6,10 +6,11 @@ import { notFound } from "next/navigation";
 import { APPROVAL_CODE_DAYS, activateOneMonth, amountDue, isVerifiedPlatformAdmin } from "../../lib/billing";
 import { requireSession } from "../../lib/organization";
 import { prisma } from "../../lib/prisma";
+import { isOwnerUnlocked } from "../../lib/owner-key";
 
 async function requireAdmin() {
   const session = await requireSession();
-  if (!isVerifiedPlatformAdmin(session.user)) notFound();
+  if (!isVerifiedPlatformAdmin(session.user) || !(await isOwnerUnlocked(session.user.id))) notFound();
   return session;
 }
 

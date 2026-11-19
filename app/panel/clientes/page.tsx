@@ -6,6 +6,7 @@ import { requireOrganization } from "../../../lib/organization";
 import { prisma } from "../../../lib/prisma";
 import { formatDateStr } from "../../../lib/time";
 import { createCustomer, deleteCustomer, updateCustomer } from "../actions";
+import { SetupStepFooter } from "../../../components/setup-step-footer";
 
 export const metadata = { title: "Clientes" };
 
@@ -47,6 +48,7 @@ export default async function CustomersPage() {
             </div>
           </details>)}</div>}
       </section>}
+      {isOwner && <SetupStepFooter step="clientes" completed={organization.setupCompleted} />}
     </div>
   </main>;
 }

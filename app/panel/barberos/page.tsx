@@ -4,6 +4,7 @@ import { PageHeader, cardClass, fieldClass } from "../../../components/panel-ui"
 import { requireOwnerOrganization } from "../../../lib/organization";
 import { prisma } from "../../../lib/prisma";
 import { createBarber, giveBarberAccess, toggleBarber } from "../actions";
+import { SetupStepFooter } from "../../../components/setup-step-footer";
 
 export const metadata = { title: "Barberos" };
 
@@ -50,6 +51,7 @@ export default async function BarbersPage() {
           </div>
         </details>)}</div>
       </section>
+      <SetupStepFooter step="barberos" completed={organization.setupCompleted} />
     </div>
   </main>;
 }

@@ -18,16 +18,12 @@ export default async function PanelPage() {
   const monthStart = zonedToUtc(`${today.slice(0, 8)}01`, "00:00", tz);
   const weekEnd = zonedToUtc(addDays(today, 7), "00:00", tz);
 
-  const [todayBookings, monthRevenue, weekCount, serviceCount, barbers, hours, customers, whatsapp, bookings] = await Promise.all([
+  const [todayBookings, monthRevenue, weekCount, serviceCount, whatsapp] = await Promise.all([
     prisma.booking.findMany({ where: { organizationId: organization.id, ...mine, startsAt: { gte: dayStart, lt: dayEnd }, status: { not: "cancelled" } }, include: { service: true, barber: true }, orderBy: { startsAt: "asc" } }),
     prisma.booking.aggregate({ where: { organizationId: organization.id, ...mine, startsAt: { gte: monthStart, lt: dayEnd }, status: { in: ["confirmed", "completed"] } }, _sum: { priceInCents: true } }),
     prisma.booking.count({ where: { organizationId: organization.id, ...mine, startsAt: { gte: new Date(), lt: weekEnd }, status: "confirmed" } }),
     prisma.service.count({ where: { organizationId: organization.id, active: true } }),
-    prisma.barber.count({ where: { organizationId: organization.id, active: true } }),
-    prisma.weeklyAvailability.count({ where: { organizationId: organization.id } }),
-    prisma.customer.count({ where: { organizationId: organization.id } }),
-    prisma.whatsAppConnection.count({ where: { organizationId: organization.id } }),
-    prisma.booking.count({ where: { organizationId: organization.id } })
+    prisma.whatsAppConnection.count({ where: { organizationId: organization.id } })
   ]);
   const publicUrl = publicBookingUrl(organization.slug);
   const firstName = session.user.name.split(" ")[0];
@@ -36,7 +32,7 @@ export default async function PanelPage() {
   return <main className="min-h-screen bg-[var(--surface-sunken)]">
     <PageHeader eyebrow={formatLongDate(new Date(), tz)} title={`${greeting(tz)}, ${firstName}.`} actions={<Link href="/panel/citas/nueva" className="flex h-10 items-center rounded-[10px] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)]">+ Nueva cita</Link>} />
     <div className="mx-auto max-w-[1440px] space-y-6 p-6 lg:p-8">
-      <SetupGuide progress={{ barbers, hours, services: serviceCount, customers, whatsapp, bookings }} />
+      <SetupGuide completed={organization.setupCompleted} />
 
       <section className="grid gap-4 sm:grid-cols-3">
         <div className={`${cardClass} p-5`}><p className="text-[13px] text-[var(--ink-muted)]">Citas de hoy</p><p className="tabular mt-3 text-[32px] font-semibold leading-9">{todayBookings.length}</p><p className="mt-2 text-[13px] text-[var(--ink-muted)]">{weekCount} por atender en los próximos 7 días</p></div>

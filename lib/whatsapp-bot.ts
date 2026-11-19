@@ -150,6 +150,12 @@ export async function callAgent({ organization, conversationId, customerPhone, c
   const recent = (await prisma.whatsAppMessage.findMany({ where: { conversationId, createdAt: { gte: since } }, orderBy: { createdAt: "desc" }, take: 21 })).reverse();
   const lastAnswer = recent.findLastIndex((m) => m.direction !== "in");
   const pending = recent.slice(lastAnswer + 1).map((m) => m.body).join("\n");
+  // WhatsApp: presentarse al iniciar la conversación y pedir el nombre real si el del perfil no sirve.
+  const notes = webSessionId || instruction ? [] : [
+    ...(lastAnswer === -1 ? [`Es el primer mensaje del cliente: salúdalo presentándote como el *Agente de citas* de ${organization.name}.`] : []),
+    ...(nameLooksIncomplete(customerName) ? [`El nombre del perfil de WhatsApp del cliente ("${customerName}") no parece un nombre completo: antes de confirmar una cita pregúntale su nombre y apellido, y usa ese nombre al agendar.`] : [])
+  ];
+  const message = instruction ?? (notes.length ? `[Indicaciones internas, no las repitas: ${notes.join(" ")}]\n${pending}` : pending);
   const history = recent.slice(0, lastAnswer + 1).slice(-20).map((m) => `${m.direction === "in" ? "Cliente" : m.direction === "echo" ? "Barbería (persona)" : "Asistente"}: ${m.body}`).join("\n");
 
   try {
@@ -160,7 +166,7 @@ export async function callAgent({ organization, conversationId, customerPhone, c
         organizationId: organization.id,
         business: { name: organization.name, timezone: organization.timezone, today: todayInZone(organization.timezone), phone: organization.phone, bookingUrl },
         customer: { phone: customerPhone, name: customerName },
-        message: pending,
+        message,
         history,
         apiBaseUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/agent`,
         agentToken: issueAgentToken(organization.id, customerPhone, webSessionId)
@@ -179,6 +185,11 @@ export async function callAgent({ organization, conversationId, customerPhone, c
     console.error("[whatsapp] no se pudo contactar a n8n", error);
     return fallback;
   }
+}
+
+// "jn", "👑", "Juan": menos de dos palabras con letras (falta el apellido o no es un nombre).
+function nameLooksIncomplete(name: string) {
+  return name.trim().split(/\s+/).filter((word) => /[a-záéíóúüñ]{2}/i.test(word)).length < 2;
 }
 
 async function reply(connection: ConnectionWithOrg, token: string, conversationId: string, to: string, body: string) {

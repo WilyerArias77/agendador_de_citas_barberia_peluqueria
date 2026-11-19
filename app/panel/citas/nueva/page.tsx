@@ -4,6 +4,7 @@ import { PageHeader, cardClass } from "../../../../components/panel-ui";
 import { getPickerData } from "../../../../lib/booking";
 import { requireOwnerOrganization } from "../../../../lib/organization";
 import { createPanelBooking } from "../../actions";
+import { SetupStepFooter } from "../../../../components/setup-step-footer";
 
 export const metadata = { title: "Nueva cita" };
 
@@ -18,6 +19,7 @@ export default async function NewBookingPage() {
           ? <p className="text-[var(--ink-muted)]">Primero agrega al menos un servicio activo en <Link href="/panel/servicios" className="font-semibold text-[var(--accent)]">Servicios</Link>.</p>
           : <BookingPicker slug={organization.slug} barbers={barberId ? [] : picker.barbers} initialBarberId={barberId ?? undefined} services={picker.services} dates={picker.dates} action={createPanelBooking} submitLabel="Crear cita" askEmail emailHint="Le enviaremos la confirmación de la cita a este correo." />}
       </section>
+      <SetupStepFooter step="reservas" completed={organization.setupCompleted} />
     </div>
   </main>;
 }

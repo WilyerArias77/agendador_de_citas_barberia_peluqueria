@@ -7,6 +7,7 @@ import { WhatsappButton } from "../../../components/whatsapp-button";
 import { MONTHLY_PER_BARBER_IN_CENTS, isPlatformAdmin, isVerifiedPlatformAdmin, setupFeeInCents } from "../../../lib/billing";
 import { hasActiveAccess, requireSession } from "../../../lib/organization";
 import { prisma } from "../../../lib/prisma";
+import { requireOwnerUnlock } from "../../../lib/owner-key";
 import { formatMoney } from "../../../lib/time";
 import { activateManually, approvePayment, cancelApprovalCode, generateApprovalCode, markSetupPaid, rejectPayment } from "../actions";
 
@@ -22,6 +23,7 @@ export default async function AdminPaymentsPage() {
   if (!isPlatformAdmin(session.user.email)) notFound();
   // El correo de administrador debe estar confirmado antes de dar acceso.
   if (!isVerifiedPlatformAdmin(session.user)) return <main className="flex min-h-screen items-center justify-center bg-[var(--surface-sunken)] p-6"><div className={`${cardClass} max-w-md p-8`}><p className="eyebrow">Administración</p><h1 className="mt-2 text-[22px] font-semibold">Confirma tu correo</h1><p className="mt-3 text-sm text-[var(--ink-muted)]">Por seguridad, el panel de pagos solo se abre cuando el correo de administrador está confirmado.</p><div className="mt-5"><VerifyEmailNotice email={session.user.email} callbackURL="/admin/pagos" /></div></div></main>;
+  await requireOwnerUnlock(session.user.id, "/admin/pagos");
   const [pending, reviewed, organizations, codes] = await Promise.all([
     prisma.paymentReport.findMany({ where: { status: "pending" }, include: { organization: { include: { owner: { select: { email: true } } } } }, orderBy: { createdAt: "asc" } }),
     prisma.paymentReport.findMany({ where: { status: { not: "pending" } }, include: { organization: { select: { name: true } } }, orderBy: { reviewedAt: "desc" }, take: 20 }),

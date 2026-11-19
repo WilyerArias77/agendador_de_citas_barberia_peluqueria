@@ -5,6 +5,7 @@ import { PageHeader, cardClass } from "../../../components/panel-ui";
 import { isVerifiedPlatformAdmin } from "../../../lib/billing";
 import { hasActiveAccess, requireSession } from "../../../lib/organization";
 import { prisma } from "../../../lib/prisma";
+import { requireOwnerUnlock } from "../../../lib/owner-key";
 import { isWhatsAppPlatformReady } from "../../../lib/whatsapp-cloud";
 import { resetConnectionError, setConnectionAgent } from "../actions";
 
@@ -17,6 +18,7 @@ const date = (value: Date | null) => value ? new Intl.DateTimeFormat("es-CO", { 
 export default async function AdminWhatsAppPage() {
   const session = await requireSession();
   if (!isVerifiedPlatformAdmin(session.user)) notFound();
+  await requireOwnerUnlock(session.user.id, "/admin/whatsapp");
   const since = new Date(Date.now() - 24 * 3_600_000);
   const [connections, inbound, outbound] = await Promise.all([
     prisma.whatsAppConnection.findMany({ include: { organization: { include: { owner: { select: { email: true } } } } }, orderBy: [{ status: "asc" }, { lastMessageAt: "desc" }] }),

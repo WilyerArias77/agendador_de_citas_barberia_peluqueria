@@ -4,6 +4,7 @@ import { requireOwnerOrganization } from "../../../lib/organization";
 import { prisma } from "../../../lib/prisma";
 import { formatMoney } from "../../../lib/time";
 import { createService, deleteService, toggleService, updateService } from "../actions";
+import { SetupStepFooter } from "../../../components/setup-step-footer";
 
 export const metadata = { title: "Servicios y tarifas" };
 
@@ -48,6 +49,7 @@ export default async function ServicesPage() {
           </div>
         </details>)}</div>
       </section>
+      <SetupStepFooter step="servicios" completed={organization.setupCompleted} />
     </div>
   </main>;
 }

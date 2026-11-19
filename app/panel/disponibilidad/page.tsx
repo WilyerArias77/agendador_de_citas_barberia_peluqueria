@@ -4,6 +4,7 @@ import { requireOwnerOrganization } from "../../../lib/organization";
 import { prisma } from "../../../lib/prisma";
 import { WEEKDAYS, WEEK_ORDER, formatLongDate, formatTime, todayInZone } from "../../../lib/time";
 import { addException, deleteException, saveAvailability } from "../actions";
+import { SetupStepFooter } from "../../../components/setup-step-footer";
 
 export const metadata = { title: "Disponibilidad" };
 
@@ -56,6 +57,7 @@ export default async function AvailabilityPage() {
           </div>;
         })}</div>}
       </section>
+      <SetupStepFooter step="horario" completed={organization.setupCompleted} />
     </div>
   </main>;
 }

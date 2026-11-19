@@ -94,6 +94,7 @@ model Organization {
   agentApiKeyHint String?
   privacyPolicyUrl String               @default("")
   setupPaidAt   DateTime?
+  setupCompleted String[]             @default([])
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
   owner         User                   @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Restrict)

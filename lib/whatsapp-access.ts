@@ -18,8 +18,9 @@ export function trialExpired(org: OrgPlan, now = Date.now()) {
   return org.subscriptionStatus === "trialing" && (!org.trialEndsAt || org.trialEndsAt.getTime() <= now);
 }
 
-export function whatsappNumberLimit(org: OrgPlan, isPlatformAdmin = false) {
-  return isPaidPlan(org) || isPlatformAdmin ? WHATSAPP_NUMBERS_PAID : WHATSAPP_NUMBERS_TRIAL;
+// Aplica igual a todos los negocios, incluido el del dueño de la plataforma.
+export function whatsappNumberLimit(org: Pick<Organization, "subscriptionStatus">) {
+  return isPaidPlan(org) ? WHATSAPP_NUMBERS_PAID : WHATSAPP_NUMBERS_TRIAL;
 }
 
 // Últimos 10 dígitos: así "+57 300 123 4567" y "3001234567" cuentan como el mismo número.

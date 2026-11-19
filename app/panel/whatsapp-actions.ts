@@ -2,7 +2,6 @@
 
 import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { isVerifiedPlatformAdmin } from "../../lib/billing";
 import { requireActiveOwner } from "../../lib/organization";
 import { prisma } from "../../lib/prisma";
 import { claimTrialNumber, isPaidPlan, removeConnection, whatsappNumberLimit } from "../../lib/whatsapp-access";
@@ -21,12 +20,12 @@ function friendly(error: unknown) {
 // Paso final del registro integrado de Meta (botón "Conectar tu número de WhatsApp Business").
 // mode: "coexistence" si Meta conectó la app WhatsApp Business del celular; "cloud" si fue un número nuevo.
 export async function connectWhatsApp(input: { code: string; wabaId: string; phoneNumberId?: string; mode: "coexistence" | "cloud" }): Promise<ConnectResult> {
-  const { organization, session } = await requireActiveOwner();
+  const { organization } = await requireActiveOwner();
   if (!isWhatsAppPlatformReady()) return { error: "La conexión con WhatsApp aún no está habilitada en la plataforma. Escríbenos a soporte." };
   if (typeof input?.code !== "string" || input.code.length < 10 || !isMetaId(input.wabaId) || (input.phoneNumberId && !isMetaId(input.phoneNumberId))) return { error: "Meta no devolvió los datos completos. Vuelve a intentarlo." };
   const mode = input.mode === "cloud" ? "cloud" : "coexistence";
   const paid = isPaidPlan(organization);
-  const limit = whatsappNumberLimit(organization, isVerifiedPlatformAdmin(session.user));
+  const limit = whatsappNumberLimit(organization);
 
   try {
     const token = await exchangeSignupCode(input.code);
